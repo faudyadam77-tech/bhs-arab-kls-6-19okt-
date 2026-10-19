@@ -1,771 +1,904 @@
 <!DOCTYPE html>
-<html lang="id" dir="ltr">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pembelajaran Interaktif - Zharful Makan & Bilangan Arab</title>
+    <title>Pembelajaran Interaktif - Zharful Makan & Bilangan</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;600;700;800&display=swap');
+        
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-            min-height: 100vh; overflow-x: hidden; color: #fff;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
         }
-        .particles { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: hidden; }
-        .particle { position: absolute; width: 6px; height: 6px; background: rgba(255,255,255,0.15); border-radius: 50%; animation: floatParticle linear infinite; }
-        @keyframes floatParticle { 0% { transform: translateY(100vh) rotate(0deg); opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; } }
-        .app-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
-        .sidebar { width: 320px; background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border-right: 1px solid rgba(255,255,255,0.1); padding: 20px; overflow-y: auto; position: fixed; left: 0; top: 0; height: 100vh; z-index: 10; }
-        .sidebar-title { text-align: center; font-size: 1.3em; font-weight: 700; margin-bottom: 5px; background: linear-gradient(90deg, #f7971e, #ffd200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .sidebar-subtitle { text-align: center; font-size: 0.75em; color: rgba(255,255,255,0.5); margin-bottom: 15px; }
-        .btn-refresh-lb {
-            display: block; margin: 0 auto 15px; padding: 8px 16px;
-            background: rgba(255,210,0,0.15); border: 1px solid rgba(255,210,0,0.3);
-            border-radius: 8px; color: #ffd200; font-size: 0.75em;
-            font-family: 'Poppins', sans-serif; cursor: pointer;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header .arabic {
+            font-family: 'Amiri', serif;
+            font-size: 1.5em;
+            direction: rtl;
+        }
+        
+        .layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+        
+        .sidebar {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .sidebar h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .leaderboard {
+            list-style: none;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        .leaderboard li {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
             transition: all 0.3s;
         }
-        .btn-refresh-lb:hover { background: rgba(255,210,0,0.25); }
-        .leaderboard-list { list-style: none; }
-        .leaderboard-item { display: flex; align-items: center; padding: 12px 15px; margin-bottom: 8px; border-radius: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s; animation: slideIn 0.5s ease; }
-        @keyframes slideIn { from { opacity: 0; transform: translateX(-30px); } to { opacity: 1; transform: translateX(0); } }
-        .leaderboard-item:hover { background: rgba(255,255,255,0.1); transform: translateX(5px); }
-        .rank-badge { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9em; margin-right: 12px; flex-shrink: 0; }
+        
+        .leaderboard li:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+        
+        .rank {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
         .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
         .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: #000; }
         .rank-3 { background: linear-gradient(135deg, #CD7F32, #B87333); color: #fff; }
-        .rank-default { background: rgba(255,255,255,0.1); color: #fff; }
+        .rank-other { background: rgba(255,255,255,0.2); }
+        
         .player-info { flex: 1; }
-        .player-name { font-weight: 600; font-size: 0.9em; }
-        .player-time { font-size: 0.7em; color: rgba(255,255,255,0.4); }
-        .player-score { font-weight: 800; font-size: 1.1em; color: #ffd200; }
-        .no-data { text-align: center; color: rgba(255,255,255,0.3); padding: 40px 20px; font-size: 0.9em; }
-        .main-content { flex: 1; margin-left: 320px; padding: 30px; display: flex; flex-direction: column; align-items: center; }
-        .header { text-align: center; margin-bottom: 30px; width: 100%; max-width: 900px; }
-        .header h1 { font-size: 2em; font-weight: 800; background: linear-gradient(90deg, #f7971e, #ffd200, #f7971e); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: shimmer 3s linear infinite; margin-bottom: 5px; }
-        @keyframes shimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
-        .header .arabic-title { font-family: 'Amiri', serif; font-size: 1.5em; color: rgba(255,255,255,0.6); direction: rtl; }
-        .header .subtitle { color: rgba(255,255,255,0.5); font-size: 0.85em; margin-top: 5px; }
-        .screen { display: none; width: 100%; max-width: 900px; animation: fadeIn 0.5s ease; }
-        .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .name-screen { text-align: center; padding: 40px 20px; }
-        .name-screen .welcome-icon { font-size: 4em; margin-bottom: 20px; animation: bounce 2s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        .name-screen h2 { font-size: 1.8em; margin-bottom: 10px; }
-        .name-screen p { color: rgba(255,255,255,0.6); margin-bottom: 30px; }
-        .name-input-group { display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px; }
-        .name-input-group input { flex: 1; padding: 15px 20px; border: 2px solid rgba(255,255,255,0.2); border-radius: 15px; background: rgba(255,255,255,0.08); color: #fff; font-size: 1.1em; font-family: 'Poppins', sans-serif; outline: none; transition: all 0.3s; }
-        .name-input-group input:focus { border-color: #ffd200; box-shadow: 0 0 20px rgba(255,210,0,0.2); }
-        .name-input-group input::placeholder { color: rgba(255,255,255,0.3); }
-        .btn-start { padding: 15px 40px; background: linear-gradient(135deg, #f7971e, #ffd200); color: #000; border: none; border-radius: 15px; font-size: 1.1em; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,210,0,0.3); }
-        .cards-info { text-align: center; margin-bottom: 15px; padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
-        .cards-info span { color: #ffd200; font-weight: 700; }
-        .cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; width: 100%; max-width: 900px; margin: 0 auto; }
-        .card-wrapper { perspective: 1000px; height: 130px; cursor: pointer; }
-        .card-wrapper.disabled { pointer-events: none; }
-        .card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
-        .card-wrapper.flipped .card-inner { transform: rotateY(180deg); }
-        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .card-front { background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border: 2px solid rgba(255,255,255,0.15); transition: all 0.3s; }
-        .card-wrapper:hover .card-front:not(.used) { border-color: rgba(255,210,0,0.5); box-shadow: 0 5px 20px rgba(255,210,0,0.15); transform: translateY(-3px); }
-        .card-front .card-number { font-size: 2.2em; font-weight: 800; color: rgba(255,255,255,0.4); }
-        .card-front .card-question-mark { font-size: 1.2em; color: rgba(255,255,255,0.2); margin-top: 2px; }
-        .card-front.used { opacity: 0.35; border-color: rgba(255,255,255,0.05); cursor: not-allowed; }
-        .card-front.used .card-number { color: rgba(255,255,255,0.2); }
-        .card-used-badge { display: none; font-size: 0.65em; color: rgba(255,255,255,0.3); margin-top: 5px; font-weight: 600; }
-        .card-front.used .card-used-badge { display: block; }
-        .card-back { background: linear-gradient(135deg, #f7971e, #ffd200); transform: rotateY(180deg); color: #000; }
-        .card-back .card-status { font-size: 2em; }
-        .card-back .card-status-text { font-size: 0.75em; font-weight: 700; margin-top: 5px; }
-        .card-wrapper.answered .card-front { border-color: rgba(255,255,255,0.05); opacity: 0.4; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
-        .modal-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
-        .modal { background: linear-gradient(135deg, #1a1a3e, #2d2d6e); border-radius: 25px; padding: 35px; max-width: 650px; width: 100%; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 60px rgba(0,0,0,0.5); position: relative; max-height: 90vh; overflow-y: auto; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .timer-display { display: flex; align-items: center; gap: 8px; font-size: 1.1em; font-weight: 700; color: #ffd200; }
-        .question-text { font-size: 1.15em; font-weight: 600; margin-bottom: 10px; line-height: 1.6; }
-        .question-arabic { font-family: 'Amiri', serif; font-size: 2.2em; text-align: center; direction: rtl; color: #ffd200; margin: 15px 0 25px; padding: 20px; background: rgba(255,210,0,0.05); border-radius: 15px; border: 1px solid rgba(255,210,0,0.15); line-height: 1.8; }
-        .options-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
-        .option-btn { padding: 18px 20px; border: 2px solid rgba(255,255,255,0.15); border-radius: 15px; background: rgba(255,255,255,0.05); color: #fff; font-size: 1em; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.3s; text-align: center; }
-        .option-btn:hover:not(.disabled) { border-color: #ffd200; background: rgba(255,210,0,0.1); transform: translateY(-2px); }
-        .option-btn .option-label { display: inline-block; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.1); line-height: 28px; text-align: center; margin-right: 10px; font-weight: 700; font-size: 0.85em; }
-        .option-btn.correct { border-color: #4CAF50; background: rgba(76,175,80,0.2); animation: correctPulse 0.5s ease; }
-        .option-btn.wrong { border-color: #f44336; background: rgba(244,67,54,0.2); animation: shake 0.5s ease; }
-        .option-btn.disabled { cursor: default; opacity: 0.6; }
-        @keyframes correctPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        .result-display { text-align: center; padding: 20px; border-radius: 15px; margin-top: 15px; display: none; }
-        .result-display.show { display: block; animation: fadeIn 0.5s ease; }
-        .result-display.correct-result { background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); }
-        .result-display.wrong-result { background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.3); }
-        .result-emoji { font-size: 3em; margin-bottom: 10px; }
-        .result-text { font-size: 1.2em; font-weight: 700; margin-bottom: 5px; }
-        .result-score { font-size: 0.9em; color: rgba(255,255,255,0.6); }
-        .btn-next { display: block; margin: 20px auto 0; padding: 12px 35px; background: linear-gradient(135deg, #f7971e, #ffd200); color: #000; border: none; border-radius: 12px; font-size: 1em; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.3s; }
-        .btn-next:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255,210,0,0.3); }
-        .btn-close-modal { position: absolute; top: 15px; right: 20px; background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.5em; cursor: pointer; transition: color 0.3s; }
-        .btn-close-modal:hover { color: #fff; }
-        .final-screen { text-align: center; padding: 40px 20px; }
-        .final-screen .trophy { font-size: 5em; animation: bounce 2s infinite; }
-        .final-screen h2 { font-size: 2em; margin: 20px 0 10px; background: linear-gradient(90deg, #f7971e, #ffd200); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .final-score-display { font-size: 4em; font-weight: 800; color: #ffd200; margin: 20px 0; }
-        .final-stats { display: flex; justify-content: center; gap: 30px; margin: 20px 0 30px; flex-wrap: wrap; }
-        .stat-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; padding: 20px 30px; text-align: center; }
-        .stat-box .stat-value { font-size: 1.8em; font-weight: 800; color: #ffd200; }
-        .stat-box .stat-label { font-size: 0.8em; color: rgba(255,255,255,0.5); margin-top: 5px; }
-        .btn-restart { padding: 15px 40px; background: linear-gradient(135deg, #f7971e, #ffd200); color: #000; border: none; border-radius: 15px; font-size: 1.1em; font-weight: 700; font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.3s; margin: 10px; }
-        .btn-restart:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,210,0,0.3); }
-        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 200; align-items: center; justify-content: center; flex-direction: column; gap: 15px; }
-        .loading-overlay.active { display: flex; }
-        .spinner { width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1); border-top-color: #ffd200; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-text { color: rgba(255,255,255,0.7); font-size: 0.9em; }
-        .toast { position: fixed; bottom: 30px; right: 30px; padding: 15px 25px; border-radius: 12px; font-size: 0.9em; font-weight: 600; z-index: 300; transform: translateY(100px); opacity: 0; transition: all 0.4s ease; }
-        .toast.show { transform: translateY(0); opacity: 1; }
-        .toast.success { background: rgba(76,175,80,0.9); color: #fff; }
-        .toast.error { background: rgba(244,67,54,0.9); color: #fff; }
-        .toast.info { background: rgba(33,150,243,0.9); color: #fff; }
-        .connection-status {
-            text-align: center; font-size: 0.7em; padding: 5px 10px;
-            border-radius: 6px; margin-bottom: 10px;
+        .player-name { font-weight: 600; font-size: 0.95em; }
+        .player-stats { font-size: 0.75em; opacity: 0.7; margin-top: 3px; }
+        .player-score { font-weight: bold; font-size: 1.2em; color: #FFD700; }
+        
+        .main-content {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
         }
-        .connection-status.online { background: rgba(76,175,80,0.15); color: #4CAF50; }
-        .connection-status.offline { background: rgba(244,67,54,0.15); color: #f44336; }
-        @media (max-width: 1024px) { .sidebar { width: 260px; } .main-content { margin-left: 260px; } }
-        @media (max-width: 768px) { .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); } .main-content { margin-left: 0; } .app-container { flex-direction: column; } .cards-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; } .card-wrapper { height: 100px; } .options-list { grid-template-columns: 1fr; } .header h1 { font-size: 1.4em; } }
-        ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); } ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.5s; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .name-input-section {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .name-input-section h2 {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .name-input-section p {
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+        
+        .input-group {
+            display: flex;
+            gap: 10px;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+        
+        .input-group input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 1.1em;
+            font-family: 'Poppins', sans-serif;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #FFD700;
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .input-group input::placeholder { color: rgba(255,255,255,0.5); }
+        
+        .btn {
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: bold;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .cards-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        
+        .card {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.15);
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            font-size: 2em;
+            font-weight: bold;
+        }
+        
+        .card:hover:not(.used) {
+            transform: translateY(-5px);
+            border-color: #FFD700;
+            box-shadow: 0 10px 20px rgba(255,215,0,0.3);
+        }
+        
+        .card.used {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .card.used::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.5em;
+            background: #4CAF50;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-number {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+        
+        .card-status {
+            font-size: 0.4em;
+            opacity: 0.7;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+        
+        .timer {
+            text-align: center;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            color: #FFD700;
+            font-weight: bold;
+        }
+        
+        .question-text {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .question-arabic {
+            font-family: 'Amiri', serif;
+            font-size: 2em;
+            text-align: center;
+            direction: rtl;
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            color: #FFD700;
+        }
+        
+        .options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .options { grid-template-columns: 1fr; }
+        }
+        
+        .option {
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1em;
+            font-family: 'Poppins', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .option:hover:not(.disabled) {
+            background: rgba(255,255,255,0.2);
+            border-color: #FFD700;
+        }
+        
+        .option.correct {
+            background: rgba(76,175,80,0.3);
+            border-color: #4CAF50;
+        }
+        
+        .option.wrong {
+            background: rgba(244,67,54,0.3);
+            border-color: #f44336;
+        }
+        
+        .option.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result.show { display: block; animation: fadeIn 0.5s; }
+        .result.correct { background: rgba(76,175,80,0.2); border: 2px solid #4CAF50; }
+        .result.wrong { background: rgba(244,67,54,0.2); border: 2px solid #f44336; }
+        
+        .result-emoji { font-size: 3em; margin-bottom: 10px; }
+        .result-text { font-size: 1.3em; font-weight: bold; margin-bottom: 10px; }
+        .result-score { font-size: 0.9em; opacity: 0.8; }
+        
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 2000;
+        }
+        
+        .loading.active { display: flex; }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top-color: #FFD700;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-weight: 600;
+            z-index: 3000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s;
+        }
+        
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #4CAF50; }
+        .toast.error { background: #f44336; }
+        .toast.info { background: #2196F3; }
+        
+        .status-indicator {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+        }
+        
+        .status-indicator.online { background: rgba(76,175,80,0.2); color: #4CAF50; }
+        .status-indicator.offline { background: rgba(244,67,54,0.2); color: #f44336; }
     </style>
 </head>
 <body>
-
-<div class="particles" id="particles"></div>
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="spinner"></div>
-    <div class="loading-text" id="loadingText">Memuat data...</div>
-</div>
-<div class="toast" id="toast"></div>
-
-<div class="app-container">
-    <aside class="sidebar">
-        <div class="sidebar-title">🏆 PAPAN PERINGKAT</div>
-        <div class="sidebar-subtitle">Leaderboard Siswa</div>
-        <div class="connection-status offline" id="connStatus"> Belum terhubung</div>
-        <button class="btn-refresh-lb" onclick="loadAllData()">🔄 Refresh Peringkat</button>
-        <ul class="leaderboard-list" id="leaderboardList">
-            <li class="no-data" id="noDataMsg">Belum ada siswa yang mengerjakan</li>
-        </ul>
-    </aside>
-
-    <main class="main-content">
+    <div class="container">
         <div class="header">
             <h1>📚 Pembelajaran Interaktif</h1>
-            <div class="arabic-title">ظَرْفُ الْمَكَان وَ الْأَعْدَاد</div>
-            <div class="subtitle">Zharful Makan (Keterangan Tempat) & Bilangan Nominal 1-20</div>
+            <div class="arabic">ظَرْفُ الْمَكَان وَ الْأَعْدَاد</div>
         </div>
-
-        <div class="screen active" id="nameScreen">
-            <div class="name-screen">
-                <div class="welcome-icon">🎓</div>
-                <h2>Selamat Datang!</h2>
-                <p>Masukkan namamu untuk mulai bermain. Pilih satu kartu dan jawab pertanyaannya!</p>
-                <div class="name-input-group">
-                    <input type="text" id="studentName" placeholder="Ketik namamu di sini..." maxlength="30" autocomplete="off">
-                    <button class="btn-start" id="btnStart" onclick="startGame()">MULAI 🚀</button>
+        
+        <div class="layout">
+            <div class="sidebar">
+                <h2>🏆 Papan Peringkat</h2>
+                <div class="status-indicator offline" id="statusIndicator"> Memuat...</div>
+                <ul class="leaderboard" id="leaderboard"></ul>
+            </div>
+            
+            <div class="main-content">
+                <!-- Screen 1: Input Nama -->
+                <div class="screen active" id="nameScreen">
+                    <div class="name-input-section">
+                        <h2>🎓 Selamat Datang!</h2>
+                        <p>Masukkan namamu untuk mulai bermain. Pilih satu kartu dan jawab soal!</p>
+                        <div class="input-group">
+                            <input type="text" id="studentName" placeholder="Ketik namamu..." maxlength="30">
+                            <button class="btn" onclick="startGame()">MULAI</button>
+                        </div>
+                        <p style="font-size: 0.85em; opacity: 0.7;">
+                            💡 Setiap siswa menjawab 1 kartu. Setelah selesai, siswa berikutnya memasukkan nama.
+                        </p>
+                        <div id="cardsInfo" style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;"></div>
+                    </div>
                 </div>
-                <p style="font-size:0.75em; color:rgba(255,255,255,0.3); margin-top:15px;">💡 Skor dihitung dari jawaban benar + kecepatan menjawab</p>
-                <div id="cardsRemainingInfo" style="margin-top:15px; font-size:0.85em; color:rgba(255,255,255,0.4);"></div>
-            </div>
-        </div>
-
-        <div class="screen" id="cardScreen">
-            <div class="cards-info">
-                Pemain: <span id="currentPlayerName"></span>
-                &nbsp;|&nbsp; Kartu tersisa: <span id="remainingCards">50</span> dari 50
-            </div>
-            <div class="cards-grid" id="cardsGrid"></div>
-        </div>
-
-        <div class="screen" id="finalScreen">
-            <div class="final-screen">
-                <div class="trophy">🏆</div>
-                <h2>Permainan Selesai!</h2>
-                <p style="color:rgba(255,255,255,0.6);">Skor akhir kamu:</p>
-                <div class="final-score-display" id="finalScoreDisplay">0</div>
-                <div class="final-stats">
-                    <div class="stat-box"><div class="stat-value" id="statCorrect">0</div><div class="stat-label">Benar</div></div>
-                    <div class="stat-box"><div class="stat-value" id="statWrong">0</div><div class="stat-label">Salah</div></div>
-                    <div class="stat-box"><div class="stat-value" id="statAvgTime">0s</div><div class="stat-label">Rata-rata Waktu</div></div>
+                
+                <!-- Screen 2: Pilih Kartu -->
+                <div class="screen" id="cardScreen">
+                    <h2 style="text-align: center; margin-bottom: 10px;">Pilih Satu Kartu</h2>
+                    <p style="text-align: center; opacity: 0.8; margin-bottom: 20px;">
+                        Pemain: <strong id="currentPlayer" style="color: #FFD700;"></strong>
+                    </p>
+                    <div class="cards-grid" id="cardsGrid"></div>
                 </div>
-                <button class="btn-restart" onclick="resetGame()">🔄 Main Lagi</button>
             </div>
         </div>
-    </main>
-</div>
-
-<div class="modal-overlay" id="questionModal">
-    <div class="modal">
-        <button class="btn-close-modal" onclick="closeModal()">✕</button>
-        <div class="modal-header">
-            <div class="timer-display"><span>⏱️</span><span id="timerValue">0.0s</span></div>
-        </div>
-        <div class="question-text" id="questionText"></div>
-        <div class="question-arabic" id="questionArabic"></div>
-        <div class="options-list" id="optionsList"></div>
-        <div class="result-display" id="resultDisplay">
-            <div class="result-emoji" id="resultEmoji"></div>
-            <div class="result-text" id="resultText"></div>
-            <div class="result-score" id="resultScore"></div>
-        </div>
-        <button class="btn-next" id="btnNext" style="display:none;" onclick="nextQuestion()">Kartu Berikutnya ➡️</button>
     </div>
-</div>
-
-<script>
-// ============================================================
-// ⚠️ GANTI URL DI BAWAH INI DENGAN URL APPS SCRIPT ANDA
-//    Format: https://script.google.com/macros/s/XXXXX/exec
-// ============================================================
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHO8t9MFEaRUeXW6iHUjHya4znrqOH0FiD6ZSOWFKIYS62alui5wZL-NvsomfsdOs/exec';
-// ============================================================
-
-let isOnline = false;
-
-// ===== QUESTIONS DATABASE =====
-const allQuestions = [
-    // === ZHARFUL MAKAN - 25 soal ===
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'السَّاعَةُ ...... السَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 0 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'السَّبُّورَةُ ...... السَّاعَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'خَلْفَ'], correct: 1 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الأُسْتَاذُ ...... السَّبُّورَةِ وَالْمَكْتَبِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْكِتَابُ ...... الْمَكْتَبِ', options: ['تَحْتَ', 'فَوْقَ', 'بَيْنَ', 'خَلْفَ'], correct: 1 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْحَقِيبَةُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْكُرْسِيِّ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْبِلَاطُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'السَّقْفُ ...... الْفَصْلِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْقَلَمُ ...... الْكِتَابِ وَالْمِسْطَرَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْمَكْتَبُ ...... الْكُرْسِيِّ وَالسَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الصُّورَةُ ...... السَّبُّورَةِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْمِمْحَاةُ ...... الطَّبْشُورَةِ وَالْقَلَمِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْحِذَاءُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْمِصْبَاحُ ...... طَاوِلَةِ الْمُعَلِّمِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْكُرَةُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الطَّالِبُ جَالِسٌ ...... صَدِيقَيْنِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْقُبَّعَةُ ...... الرَّفِّ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'الْكِتَابُ ...... كِتَابِ الدَّرْسِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
-    { category: 'zharful', question: 'Apa arti kata berikut dalam bahasa Indonesia?', arabic: 'فَوْقَ = ؟', options: ['Di bawah', 'Di atas', 'Di antara', 'Di dalam'], correct: 1 },
-    { category: 'zharful', question: 'Apa arti kata berikut dalam bahasa Indonesia?', arabic: 'تَحْتَ = ؟', options: ['Di atas', 'Di antara', 'Di bawah', 'Di samping'], correct: 2 },
-    { category: 'zharful', question: 'Apa arti kata berikut dalam bahasa Indonesia?', arabic: 'بَيْنَ = ؟', options: ['Di atas', 'Di bawah', 'Di belakang', 'Di antara'], correct: 3 },
-    { category: 'zharful', question: 'Apa arti istilah berikut dalam bahasa Indonesia?', arabic: 'ظَرْفُ الْمَكَان = ؟', options: ['Keterangan waktu', 'Keterangan tempat', 'Kata benda', 'Kata kerja'], correct: 1 },
-    { category: 'zharful', question: 'Manakah yang BUKAN termasuk Zharful Makan?', arabic: 'ظَرْفُ الْمَكَان', options: ['فَوْقَ', 'تَحْتَ', 'كَبِيرٌ', 'بَيْنَ'], correct: 2 },
-    { category: 'zharful', question: 'Apa lawan kata dari تَحْتَ (di bawah)?', arabic: 'تَحْتَ ↔ ؟', options: ['بَيْنَ', 'فَوْقَ', 'فِي', 'عَلَى'], correct: 1 },
-    { category: 'zharful', question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْفَصْلِ', options: ['تَحْتَ', 'بَيْنَ', 'فِي', 'فَوْقَ'], correct: 2 },
-
-    // === BILANGAN 1-20 - 25 soal BERPIKIR ===
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan berikut:', arabic: 'أَرْبَعَةٌ + خَمْسَةٌ = ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'عَشَرَةٌ'], correct: 1 },
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan berikut:', arabic: 'ثَلَاثَةٌ + سَبْعَةٌ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan berikut:', arabic: 'سِتَّةٌ + أَرْبَعَةٌ = ؟', options: ['سَبْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'], correct: 1 },
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan berikut:', arabic: 'خَمْسَةٌ + خَمْسَةٌ = ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan berikut:', arabic: 'تِسْعَةٌ + وَاحِدٌ = ؟', options: ['عَشَرَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'أَحَدَ عَشَرَ'], correct: 0 },
-    { category: 'bilangan', question: 'Hitunglah hasil pengurangan berikut:', arabic: 'عَشَرَةٌ - ثَلَاثَةٌ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil pengurangan berikut:', arabic: 'ثَمَانِيَةٌ - خَمْسَةٌ = ؟', options: ['أَرْبَعَةٌ', 'ثَلَاثَةٌ', 'اِثْنَانِ', 'خَمْسَةٌ'], correct: 1 },
-    { category: 'bilangan', question: 'Hitunglah hasil pengurangan berikut:', arabic: 'عِشْرُونَ - عَشَرَةٌ = ؟', options: ['خَمْسَةٌ', 'سَبْعَةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil pengurangan berikut:', arabic: 'سَبْعَةٌ - أَرْبَعَةٌ = ؟', options: ['اِثْنَانِ', 'ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ'], correct: 1 },
-    { category: 'bilangan', question: 'Hitunglah menggunakan angka Arab berikut:', arabic: '٢ +  = ؟', options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'], correct: 1 },
-    { category: 'bilangan', question: 'Hitunglah menggunakan angka Arab berikut:', arabic: '٧ - ٢ = ؟', options: ['ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah menggunakan angka Arab berikut:', arabic: '٨ + ٧ = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'خَمْسَةَ عَشَرَ'], correct: 3 },
-    { category: 'bilangan', question: 'Hitunglah menggunakan angka Arab berikut:', arabic: '١٠ - ٥ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'], correct: 3 },
-    { category: 'bilangan', question: 'Hitunglah menggunakan angka Arab berikut:', arabic: '٦ + ٦ = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'ثَلَاثَةَ عَشَرَ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil perkalian berikut:', arabic: 'اِثْنَانِ × ثَلَاثَةٌ = ؟', options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil perkalian berikut:', arabic: 'أَرْبَعَةٌ × اِثْنَانِ = ؟', options: ['سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan tiga bilangan berikut:', arabic: '٥ + ٥ + ٥ = ؟', options: ['عَشَرَةٌ', 'خَمْسَةَ عَشَرَ', 'عِشْرُونَ', 'تِسْعَةٌ'], correct: 1 },
-    { category: 'bilangan', question: 'Hitunglah hasil penjumlahan berikut:', arabic: 'أَرْبَعَةٌ + سَبْعَةٌ = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'], correct: 2 },
-    { category: 'bilangan', question: 'Lengkapilah pola bilangan berikut:', arabic: '٢ ، ٤ ، ٦ ، ٨ ، ... = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'], correct: 1 },
-    { category: 'bilangan', question: 'Lengkapilah pola bilangan berikut:', arabic: '١ ، ٣ ، ٥ ، ٧ ، ... = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Manakah bilangan yang LEBIH BESAR?', arabic: 'تِسْعَةٌ أمْ سَبْعَةٌ ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'Sama besar', 'Tidak tahu'], correct: 1 },
-    { category: 'bilangan', question: 'Manakah bilangan yang LEBIH KECIL?', arabic: 'عَشَرَةٌ أمْ خَمْسَةٌ ؟', options: ['عَشَرَةٌ', 'خَمْسَةٌ', 'Sama besar', 'Tidak tahu'], correct: 1 },
-    { category: 'bilangan', question: 'Ahmad memiliki 3 buku, lalu ia mendapat 4 buku lagi. Berapa jumlah buku Ahmad sekarang?', arabic: '٣ كُتُب + ٤ كُتُب = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
-    { category: 'bilangan', question: 'Di dalam kelas ada 10 siswa, 3 siswa pergi. Berapa siswa yang tersisa?', arabic: '١٠ طُلَّاب - ٣ طُلَّاب = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'سِتَّةٌ'], correct: 0 },
-    { category: 'bilangan', question: 'Fatimah punya 5 pensil, lalu diberi 6 pensil lagi. Berapa jumlah pensilnya?', arabic: '٥ أَقْلَام + ٦ أَقْلَام = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'تِسْعَةٌ'], correct: 1 }
-];
-
-// ===== GAME STATE =====
-let currentPlayer = '', currentQuestion = null, currentCardIndex = -1;
-let timerInterval = null, timerStart = 0, elapsed = 0;
-let answeredCards = new Set(), usedCardIndices = new Set(), cardResults = {};
-let totalCorrect = 0, totalWrong = 0, totalTime = 0, questionsAnswered = 0;
-let leaderboardData = [], shuffledQuestions = [];
-
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded', () => {
-    createParticles();
-    loadAllData();
-    document.getElementById('studentName').addEventListener('keypress', (e) => { if (e.key === 'Enter') startGame(); });
-});
-
-function createParticles() {
-    const c = document.getElementById('particles');
-    for (let i = 0; i < 30; i++) {
-        const p = document.createElement('div');
-        p.className = 'particle';
-        p.style.left = Math.random() * 100 + '%';
-        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
-        p.style.animationDelay = (Math.random() * 10) + 's';
-        p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
-        c.appendChild(p);
-    }
-}
-
-function showToast(msg, type = 'info') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = 'toast ' + type + ' show';
-    setTimeout(() => t.classList.remove('show'), 3500);
-}
-
-function showLoading(text = 'Memuat...') {
-    document.getElementById('loadingText').textContent = text;
-    document.getElementById('loadingOverlay').classList.add('active');
-}
-function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
-
-function updateConnectionStatus(online) {
-    isOnline = online;
-    const el = document.getElementById('connStatus');
-    if (online) {
-        el.className = 'connection-status online';
-        el.textContent = '🟢 Terhubung ke Spreadsheet';
-    } else {
-        el.className = 'connection-status offline';
-        el.textContent = ' Mode Offline (lokal saja)';
-    }
-}
-
-// ===== FETCH HELPER (FIXED - NO no-cors) =====
-async function apiGet(action) {
-    if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') return null;
-    try {
-        const url = APPS_SCRIPT_URL + '?action=' + action;
-        console.log('[API GET]', url);
-        const res = await fetch(url, {
-            method: 'GET',
-            // TIDAK pakai no-cors! Apps Script Web App mendukung CORS
-        });
-        console.log('[API GET] Status:', res.status);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        console.log('[API GET] Response:', data);
-        return data;
-    } catch (e) {
-        console.error('[API GET] Error:', e);
-        return null;
-    }
-}
-
-async function apiPost(payload) {
-    if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') return null;
-    try {
-        console.log('[API POST] URL:', APPS_SCRIPT_URL);
-        console.log('[API POST] Payload:', payload);
-
-        // Cara 1: Kirim sebagai JSON biasa (tanpa no-cors)
-        const res = await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
-        });
-
-        console.log('[API POST] Status:', res.status);
-
-        // Apps Script kadang redirect, ikuti redirect
-        if (res.redirected) {
-            console.log('[API POST] Redirected to:', res.url);
-        }
-
-        const text = await res.text();
-        console.log('[API POST] Response text:', text);
-
-        try {
-            const data = JSON.parse(text);
-            console.log('[API POST] Parsed:', data);
-            return data;
-        } catch {
-            console.log('[API POST] Not JSON, but request sent');
-            return { success: true };
-        }
-    } catch (e) {
-        console.error('[API POST] Error:', e);
-
-        // Fallback: coba dengan URLSearchParams
-        try {
-            console.log('[API POST] Trying fallback with form data...');
-            const formData = new URLSearchParams();
-            formData.append('data', JSON.stringify(payload));
-
-            const res2 = await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            });
-            console.log('[API POST Fallback] Status:', res2.status);
-            return { success: true };
-        } catch (e2) {
-            console.error('[API POST Fallback] Error:', e2);
-            return null;
-        }
-    }
-}
-
-// ===== LOAD ALL DATA =====
-async function loadAllData() {
-    showLoading('Memuat data dari spreadsheet...');
-
-    const data = await apiGet('getAllData');
-
-    if (data && data.success) {
-        updateConnectionStatus(true);
-        leaderboardData = data.leaderboard || [];
-        usedCardIndices = new Set(data.usedCards || []);
-        cardResults = data.cardResults || {};
-
-        renderLeaderboard(leaderboardData);
-
-        const remaining = 50 - usedCardIndices.size;
-        document.getElementById('cardsRemainingInfo').textContent =
-            `✅ Kartu tersedia: ${remaining} dari 50 | Sudah dipakai: ${usedCardIndices.size}`;
-
-        if (remaining === 0) {
-            document.getElementById('cardsRemainingInfo').innerHTML =
-                '⚠️ <strong style="color:#f44336;">Semua 50 kartu sudah dipakai!</strong> Perlu reset di spreadsheet.';
-        }
-        showToast('Data berhasil dimuat!', 'success');
-    } else {
-        updateConnectionStatus(false);
-        renderLeaderboard([]);
-        document.getElementById('cardsRemainingInfo').textContent =
-            '⚠️ Tidak bisa terhubung ke spreadsheet. Mode offline.';
-        showToast('Gagal memuat dari spreadsheet. Mode offline.', 'error');
-    }
-
-    hideLoading();
-}
-
-function renderLeaderboard(data) {
-    const list = document.getElementById('leaderboardList');
-
-    if (!data || data.length === 0) {
-        list.innerHTML = '<li class="no-data">Belum ada siswa yang mengerjakan</li>';
-        return;
-    }
-
-    // Sort: skor tertinggi dulu, jika sama -> waktu tercepat
-    data.sort((a, b) => {
-        const scoreA = Number(a.score) || 0;
-        const scoreB = Number(b.score) || 0;
-        if (scoreB !== scoreA) return scoreB - scoreA;
-        return (Number(a.avgTime) || 999) - (Number(b.avgTime) || 999);
-    });
-
-    list.innerHTML = '';
-    data.forEach((item, idx) => {
-        const rank = idx + 1;
-        const rankClass = rank <= 3 ? 'rank-' + rank : 'rank-default';
-        const li = document.createElement('li');
-        li.className = 'leaderboard-item';
-        li.style.animationDelay = (idx * 0.05) + 's';
-
-        const name = item.name || 'Anonim';
-        const score = Number(item.score) || 0;
-        const correct = Number(item.correct) || 0;
-        const wrong = Number(item.wrong) || 0;
-        const avgTime = Number(item.avgTime) || 0;
-
-        li.innerHTML = `
-            <div class="rank-badge ${rankClass}">${rank <= 3 ? ['🥇','🥈',''][rank-1] : rank}</div>
-            <div class="player-info">
-                <div class="player-name">${name}</div>
-                <div class="player-time">⏱ ${avgTime.toFixed(1)}s | ✅ ${correct} | ❌ ${wrong}</div>
+    
+    <!-- Modal Soal -->
+    <div class="modal" id="questionModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">✕</button>
+            <div class="timer" id="timer">⏱️ 0.0s</div>
+            <div class="question-text" id="questionText"></div>
+            <div class="question-arabic" id="questionArabic"></div>
+            <div class="options" id="options"></div>
+            <div class="result" id="result">
+                <div class="result-emoji" id="resultEmoji"></div>
+                <div class="result-text" id="resultText"></div>
+                <div class="result-score" id="resultScore"></div>
             </div>
-            <div class="player-score">${score}</div>
-        `;
-        list.appendChild(li);
-    });
-}
+        </div>
+    </div>
+    
+    <!-- Loading -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div id="loadingText">Memuat...</div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
-// ===== SAVE SCORE =====
-async function saveScore(name, score, correct, wrong, avgTime) {
-    console.log('[SAVE SCORE]', { name, score, correct, wrong, avgTime });
+    <script>
+        // ============================================
+        // KONFIGURASI - GANTI DENGAN URL ANDA
+        // ============================================
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXhKPF1CsONSEQgBfZuzw2opyGB_CrLZ-DXoEvXAD6QlFZIz0vaaeewF1eDjBFWG0/exec';
+        // ============================================
 
-    const result = await apiPost({
-        action: 'saveScore',
-        name: name,
-        score: score,
-        correct: correct,
-        wrong: wrong,
-        avgTime: parseFloat(avgTime.toFixed(1))
-    });
+        // Data soal
+        const allQuestions = [
+            // ZHARFUL MAKAN - 25 soal
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'السَّاعَةُ ...... السَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'السَّبُّورَةُ ...... السَّاعَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'خَلْفَ'], correct: 1 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الأُسْتَاذُ ...... السَّبُّورَةِ وَالْمَكْتَبِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْكِتَابُ ...... الْمَكْتَبِ', options: ['تَحْتَ', 'فَوْقَ', 'بَيْنَ', 'خَلْفَ'], correct: 1 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْحَقِيبَةُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْكُرْسِيِّ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْبِلَاطُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'السَّقْفُ ...... الْفَصْلِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْقَلَمُ ...... الْكِتَابِ وَالْمِسْطَرَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْمَكْتَبُ ...... الْكُرْسِيِّ وَالسَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الصُّورَةُ ...... السَّبُّورَةِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْمِمْحَاةُ ...... الطَّبْشُورَةِ وَالْقَلَمِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْحِذَاءُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْمِصْبَاحُ ...... طَاوِلَةِ الْمُعَلِّمِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْكُرَةُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الطَّالِبُ جَالِسٌ ...... صَدِيقَيْنِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْقُبَّعَةُ ...... الرَّفِّ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْكِتَابُ ...... كِتَابِ الدَّرْسِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
+            { category: 'zharful', question: 'Apa arti kata berikut?', arabic: 'فَوْقَ = ؟', options: ['Di bawah', 'Di atas', 'Di antara', 'Di dalam'], correct: 1 },
+            { category: 'zharful', question: 'Apa arti kata berikut?', arabic: 'تَحْتَ = ؟', options: ['Di atas', 'Di antara', 'Di bawah', 'Di samping'], correct: 2 },
+            { category: 'zharful', question: 'Apa arti kata berikut?', arabic: 'بَيْنَ = ؟', options: ['Di atas', 'Di bawah', 'Di belakang', 'Di antara'], correct: 3 },
+            { category: 'zharful', question: 'Apa arti istilah berikut?', arabic: 'ظَرْفُ الْمَكَان = ؟', options: ['Keterangan waktu', 'Keterangan tempat', 'Kata benda', 'Kata kerja'], correct: 1 },
+            { category: 'zharful', question: 'Manakah yang BUKAN Zharful Makan?', arabic: 'ظَرْفُ الْمَكَان', options: ['فَوْقَ', 'تَحْتَ', 'كَبِيرٌ', 'بَيْنَ'], correct: 2 },
+            { category: 'zharful', question: 'Apa lawan kata dari تَحْتَ?', arabic: 'تَحْتَ ↔ ؟', options: ['بَيْنَ', 'فَوْقَ', 'فِي', 'عَلَى'], correct: 1 },
+            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْفَصْلِ', options: ['تَحْتَ', 'بَيْنَ', 'فِي', 'فَوْقَ'], correct: 2 },
 
-    if (result && result.success) {
-        console.log('[SAVE SCORE] Success!');
-        showToast('Skor tersimpan!', 'success');
-    } else {
-        console.log('[SAVE SCORE] Failed or offline, saving locally');
-        leaderboardData.push({ name, score, correct, wrong, avgTime });
-        renderLeaderboard(leaderboardData);
-    }
+            // BILANGAN - 25 soal
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'أَرْبَعَةٌ + خَمْسَةٌ = ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'عَشَرَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'ثَلَاثَةٌ + سَبْعَةٌ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'سِتَّةٌ + أَرْبَعَةٌ = ؟', options: ['سَبْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'خَمْسَةٌ + خَمْسَةٌ = ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'تِسْعَةٌ + وَاحِدٌ = ؟', options: ['عَشَرَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'أَحَدَ عَشَرَ'], correct: 0 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'عَشَرَةٌ - ثَلَاثَةٌ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'ثَمَانِيَةٌ - خَمْسَةٌ = ؟', options: ['أَرْبَعَةٌ', 'ثَلَاثَةٌ', 'اِثْنَانِ', 'خَمْسَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'عِشْرُونَ - عَشَرَةٌ = ؟', options: ['خَمْسَةٌ', 'سَبْعَةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'سَبْعَةٌ - أَرْبَعَةٌ = ؟', options: ['اِثْنَانِ', 'ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '٢ + ٣ = ؟', options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '٧ - ٢ = ؟', options: ['ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '٨ + ٧ = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'خَمْسَةَ عَشَرَ'], correct: 3 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '١٠ - ٥ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'], correct: 3 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '٦ + ٦ = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'ثَلَاثَةَ عَشَرَ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'اِثْنَانِ × ثَلَاثَةٌ = ؟', options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'أَرْبَعَةٌ × اِثْنَانِ = ؟', options: ['سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '٥ +  + ٥ = ؟', options: ['عَشَرَةٌ', 'خَمْسَةَ عَشَرَ', 'عِشْرُونَ', 'تِسْعَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: 'أَرْبَعَةٌ + سَبْعَةٌ = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'], correct: 2 },
+            { category: 'bilangan', question: 'Lengkapilah pola:', arabic: '٢ ، ٤ ، ٦ ، ٨ ، ...', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'], correct: 1 },
+            { category: 'bilangan', question: 'Lengkapilah pola:', arabic: '١ ، ٣ ، ٥ ، ٧ ، ...', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Mana yang LEBIH BESAR?', arabic: 'تِسْعَةٌ أمْ سَبْعَةٌ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'Sama', 'Tidak tahu'], correct: 1 },
+            { category: 'bilangan', question: 'Mana yang LEBIH KECIL?', arabic: 'عَشَرَةٌ أمْ خَمْسَةٌ؟', options: ['عَشَرَةٌ', 'خَمْسَةٌ', 'Sama', 'Tidak tahu'], correct: 1 },
+            { category: 'bilangan', question: 'Ahmad punya 3 buku, dapat 4 lagi. Berapa total?', arabic: '٣ + ٤ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Ada 10 siswa, 3 pergi. Berapa sisa?', arabic: '١٠ - ٣ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'سِتَّةٌ'], correct: 0 },
+            { category: 'bilangan', question: 'Fatimah punya 5 pensil, dapat 6 lagi. Berapa total?', arabic: '٥ + ٦ = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'تِسْعَةٌ'], correct: 1 }
+        ];
 
-    // Refresh leaderboard setelah delay
-    setTimeout(() => loadAllData(), 2000);
-}
+        // State
+        let currentPlayer = '';
+        let currentQuestion = null;
+        let currentCardIndex = -1;
+        let timerInterval = null;
+        let timerStart = 0;
+        let usedCards = new Set();
+        let cardResults = {};
+        let leaderboard = [];
 
-// ===== SAVE CARD RESULT =====
-async function saveCardResult(cardIndex, question, studentName, isCorrect, timeTaken) {
-    console.log('[SAVE CARD]', { cardIndex, question, studentName, isCorrect, timeTaken });
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            document.getElementById('studentName').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') startGame();
+            });
+        });
 
-    await apiPost({
-        action: 'saveCardResult',
-        cardIndex: cardIndex,
-        question: question,
-        studentName: studentName,
-        isCorrect: isCorrect,
-        timeTaken: parseFloat(timeTaken.toFixed(1))
-    });
-}
-
-// ===== START GAME =====
-function startGame() {
-    const name = document.getElementById('studentName').value.trim();
-    if (!name) {
-        showToast('Masukkan namamu terlebih dahulu!', 'error');
-        document.getElementById('studentName').focus();
-        return;
-    }
-
-    const remaining = 50 - usedCardIndices.size;
-    if (remaining === 0) {
-        showToast('Semua kartu sudah dipakai!', 'error');
-        return;
-    }
-
-    currentPlayer = name;
-    document.getElementById('currentPlayerName').textContent = name;
-    document.getElementById('nameScreen').classList.remove('active');
-    document.getElementById('cardScreen').classList.add('active');
-    generateCards();
-}
-
-// ===== GENERATE CARDS =====
-function generateCards() {
-    const grid = document.getElementById('cardsGrid');
-    grid.innerHTML = '';
-    answeredCards.clear();
-    shuffledQuestions = [...allQuestions].sort(() => Math.random() - 0.5);
-
-    for (let i = 0; i < 50; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
-        wrapper.dataset.index = i;
-        wrapper.dataset.question = JSON.stringify(shuffledQuestions[i]);
-
-        const isUsed = usedCardIndices.has(i);
-
-        if (isUsed) {
-            wrapper.classList.add('disabled');
-            const result = cardResults[i] || {};
-            const statusEmoji = result.correct ? '✅' : '❌';
-            const statusText = result.correct ? 'BENAR' : 'SALAH';
-            const studentName = result.studentName || '?';
-
-            wrapper.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-front used">
-                        <div class="card-number">${i + 1}</div>
-                        <div class="card-used-badge">${statusEmoji} ${studentName}</div>
-                    </div>
-                    <div class="card-back">
-                        <div class="card-status">${statusEmoji}</div>
-                        <div class="card-status-text">${statusText}</div>
-                    </div>
-                </div>
-            `;
-            wrapper.classList.add('flipped');
-        } else {
-            wrapper.onclick = () => selectCard(wrapper);
-            wrapper.innerHTML = `
-                <div class="card-inner">
-                    <div class="card-front">
-                        <div class="card-number">${i + 1}</div>
-                        <div class="card-question-mark">❓</div>
-                    </div>
-                    <div class="card-back">
-                        <div class="card-status">❓</div>
-                        <div class="card-status-text">PILIH!</div>
-                    </div>
-                </div>
-            `;
+        // API Functions
+        async function apiGet(action) {
+            if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') return null;
+            
+            try {
+                const response = await fetch(`${APPS_SCRIPT_URL}?action=${action}`, {
+                    method: 'GET'
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                console.log('API GET success:', data);
+                return data;
+            } catch (error) {
+                console.error('API GET error:', error);
+                return null;
+            }
         }
-        grid.appendChild(wrapper);
-    }
 
-    document.getElementById('remainingCards').textContent = 50 - usedCardIndices.size;
-}
+        async function apiPost(data) {
+            if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') return null;
+            
+            try {
+                console.log('API POST data:', data);
+                
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                console.log('API POST response status:', response.status);
+                return { success: true };
+            } catch (error) {
+                console.error('API POST error:', error);
+                return null;
+            }
+        }
 
-// ===== SELECT CARD =====
-function selectCard(wrapper) {
-    if (wrapper.classList.contains('answered') || wrapper.classList.contains('flipped')) return;
-    if (wrapper.classList.contains('disabled')) return;
+        // Load Data
+        async function loadData() {
+            showLoading('Memuat data...');
+            
+            const data = await apiGet('getAllData');
+            
+            if (data && data.success) {
+                updateStatus(true);
+                leaderboard = data.leaderboard || [];
+                usedCards = new Set(data.usedCards || []);
+                cardResults = data.cardResults || {};
+                
+                renderLeaderboard();
+                updateCardsInfo();
+                showToast('Data berhasil dimuat!', 'success');
+            } else {
+                updateStatus(false);
+                showToast('Mode offline - data lokal saja', 'info');
+            }
+            
+            hideLoading();
+        }
 
-    const idx = parseInt(wrapper.dataset.index);
-    if (usedCardIndices.has(idx)) {
-        showToast('Kartu ini sudah dipakai siswa lain!', 'error');
-        return;
-    }
+        function updateStatus(online) {
+            const indicator = document.getElementById('statusIndicator');
+            if (online) {
+                indicator.className = 'status-indicator online';
+                indicator.textContent = ' Terhubung ke Spreadsheet';
+            } else {
+                indicator.className = 'status-indicator offline';
+                indicator.textContent = '🔴 Mode Offline';
+            }
+        }
 
-    currentCardIndex = idx;
-    currentQuestion = JSON.parse(wrapper.dataset.question);
-    wrapper.classList.add('flipped');
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard');
+            
+            if (leaderboard.length === 0) {
+                list.innerHTML = '<li style="text-align:center; opacity:0.5; padding:20px;">Belum ada data</li>';
+                return;
+            }
+            
+            // Sort by score
+            leaderboard.sort((a, b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return a.time - b.time;
+            });
+            
+            list.innerHTML = leaderboard.map((item, index) => {
+                const rank = index + 1;
+                const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
+                const rankSymbol = rank === 1 ? '🥇' : rank === 2 ? '' : rank === 3 ? '' : rank;
+                
+                return `
+                    <li>
+                        <div class="rank ${rankClass}">${rankSymbol}</div>
+                        <div class="player-info">
+                            <div class="player-name">${item.name}</div>
+                            <div class="player-stats">⏱ ${item.time.toFixed(1)}s | ✅ ${item.correct ? 'Benar' : 'Salah'}</div>
+                        </div>
+                        <div class="player-score">${item.score}</div>
+                    </li>
+                `;
+            }).join('');
+        }
 
-    setTimeout(() => showQuestion(currentQuestion), 500);
-}
+        function updateCardsInfo() {
+            const remaining = 50 - usedCards.size;
+            document.getElementById('cardsInfo').textContent = 
+                `📊 Kartu tersisa: ${remaining} dari 50 | Sudah dipakai: ${usedCards.size}`;
+        }
 
-// ===== SHOW QUESTION =====
-function showQuestion(q) {
-    const modal = document.getElementById('questionModal');
-    document.getElementById('questionText').textContent = q.question;
-    document.getElementById('questionArabic').textContent = q.arabic;
+        // Start Game
+        function startGame() {
+            const name = document.getElementById('studentName').value.trim();
+            
+            if (!name) {
+                showToast('Masukkan nama terlebih dahulu!', 'error');
+                return;
+            }
+            
+            if (usedCards.size >= 50) {
+                showToast('Semua kartu sudah dipakai!', 'error');
+                return;
+            }
+            
+            currentPlayer = name;
+            document.getElementById('currentPlayer').textContent = name;
+            document.getElementById('nameScreen').classList.remove('active');
+            document.getElementById('cardScreen').classList.add('active');
+            
+            renderCards();
+        }
 
-    const resultDiv = document.getElementById('resultDisplay');
-    resultDiv.classList.remove('show', 'correct-result', 'wrong-result');
-    document.getElementById('btnNext').style.display = 'none';
+        // Render Cards
+        function renderCards() {
+            const grid = document.getElementById('cardsGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 50; i++) {
+                const card = document.createElement('div');
+                card.className = 'card';
+                
+                if (usedCards.has(i)) {
+                    card.classList.add('used');
+                    const result = cardResults[i];
+                    card.innerHTML = `
+                        <div class="card-number">${i + 1}</div>
+                        <div class="card-status">${result ? result.name : '?'}</div>
+                    `;
+                } else {
+                    card.onclick = () => selectCard(i);
+                    card.innerHTML = `
+                        <div class="card-number">${i + 1}</div>
+                        <div class="card-status">Pilih!</div>
+                    `;
+                }
+                
+                grid.appendChild(card);
+            }
+        }
 
-    const optList = document.getElementById('optionsList');
-    optList.innerHTML = '';
-    const labels = ['A', 'B', 'C', 'D'];
-    q.options.forEach((opt, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'option-btn';
-        btn.innerHTML = `<span class="option-label">${labels[idx]}</span>${opt}`;
-        btn.onclick = () => selectAnswer(idx, q.correct, btn);
-        optList.appendChild(btn);
-    });
+        // Select Card
+        function selectCard(index) {
+            if (usedCards.has(index)) {
+                showToast('Kartu ini sudah dipakai!', 'error');
+                return;
+            }
+            
+            currentCardIndex = index;
+            currentQuestion = allQuestions[index];
+            
+            showQuestion(currentQuestion);
+        }
 
-    timerStart = Date.now();
-    elapsed = 0;
-    clearInterval(timerInterval);
-    timerInterval = setInterval(() => {
-        elapsed = (Date.now() - timerStart) / 1000;
-        document.getElementById('timerValue').textContent = elapsed.toFixed(1) + 's';
-    }, 100);
+        // Show Question
+        function showQuestion(question) {
+            document.getElementById('questionText').textContent = question.question;
+            document.getElementById('questionArabic').textContent = question.arabic;
+            
+            const optionsDiv = document.getElementById('options');
+            optionsDiv.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option';
+                btn.textContent = option;
+                btn.onclick = () => selectAnswer(index);
+                optionsDiv.appendChild(btn);
+            });
+            
+            document.getElementById('result').classList.remove('show');
+            document.getElementById('questionModal').classList.add('active');
+            
+            // Start timer
+            timerStart = Date.now();
+            timerInterval = setInterval(() => {
+                const elapsed = (Date.now() - timerStart) / 1000;
+                document.getElementById('timer').textContent = `⏱️ ${elapsed.toFixed(1)}s`;
+            }, 100);
+        }
 
-    modal.classList.add('active');
-}
+        // Select Answer
+        function selectAnswer(selectedIndex) {
+            clearInterval(timerInterval);
+            
+            const time = (Date.now() - timerStart) / 1000;
+            const isCorrect = selectedIndex === currentQuestion.correct;
+            
+            // Disable all options
+            document.querySelectorAll('.option').forEach((btn, index) => {
+                btn.classList.add('disabled');
+                if (index === currentQuestion.correct) {
+                    btn.classList.add('correct');
+                } else if (index === selectedIndex && !isCorrect) {
+                    btn.classList.add('wrong');
+                }
+            });
+            
+            // Calculate score
+            const score = isCorrect ? Math.round(100 + (30 - time) * 2) : 0;
+            
+            // Show result
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result show ${isCorrect ? 'correct' : 'wrong'}`;
+            document.getElementById('resultEmoji').textContent = isCorrect ? '🎉' : '😔';
+            document.getElementById('resultText').textContent = isCorrect ? 'Benar! Hebat!' : 'Kurang tepat!';
+            document.getElementById('resultScore').textContent = 
+                `Skor: ${score} | Waktu: ${time.toFixed(1)}s`;
+            
+            // Save data
+            usedCards.add(currentCardIndex);
+            cardResults[currentCardIndex] = {
+                name: currentPlayer,
+                correct: isCorrect,
+                score: score,
+                time: time
+            };
+            
+            leaderboard.push({
+                name: currentPlayer,
+                score: score,
+                correct: isCorrect,
+                time: time
+            });
+            
+            // Save to spreadsheet
+            apiPost({
+                action: 'saveResult',
+                cardIndex: currentCardIndex,
+                name: currentPlayer,
+                correct: isCorrect,
+                score: score,
+                time: time,
+                question: currentQuestion.arabic
+            });
+            
+            renderLeaderboard();
+            updateCardsInfo();
+            
+            // Auto close after 3 seconds
+            setTimeout(() => {
+                closeModal();
+                resetToNameScreen();
+            }, 3000);
+        }
 
-// ===== SELECT ANSWER =====
-function selectAnswer(selected, correct, btn) {
-    clearInterval(timerInterval);
-    const finalTime = elapsed;
+        // Close Modal
+        function closeModal() {
+            document.getElementById('questionModal').classList.remove('active');
+            clearInterval(timerInterval);
+        }
 
-    document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+        // Reset to Name Screen
+        function resetToNameScreen() {
+            document.getElementById('studentName').value = '';
+            document.getElementById('cardScreen').classList.remove('active');
+            document.getElementById('nameScreen').classList.add('active');
+            
+            if (usedCards.size >= 50) {
+                showToast('Semua kartu sudah selesai! Refresh untuk reset.', 'info');
+            }
+        }
 
-    const resultDiv = document.getElementById('resultDisplay');
-    const isCorrect = selected === correct;
-    const speedBonus = Math.max(0, Math.round(50 * (1 - finalTime / 30)));
-    let score = 0;
+        // UI Helpers
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loading').classList.add('active');
+        }
 
-    if (isCorrect) {
-        btn.classList.add('correct');
-        score = 100 + speedBonus;
-        totalCorrect++;
-        resultDiv.className = 'result-display show correct-result';
-        document.getElementById('resultEmoji').textContent = '🎉';
-        document.getElementById('resultText').textContent = 'Benar! Hebat!';
-        document.getElementById('resultText').style.color = '#4CAF50';
-    } else {
-        btn.classList.add('wrong');
-        document.querySelectorAll('.option-btn')[correct].classList.add('correct');
-        score = 0;
-        totalWrong++;
-        resultDiv.className = 'result-display show wrong-result';
-        document.getElementById('resultEmoji').textContent = '😔';
-        document.getElementById('resultText').textContent = 'Kurang tepat!';
-        document.getElementById('resultText').style.color = '#f44336';
-    }
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
 
-    totalTime += finalTime;
-    questionsAnswered++;
-
-    document.getElementById('resultScore').textContent =
-        `Skor: +${score} poin | Waktu: ${finalTime.toFixed(1)}s | Bonus: +${speedBonus}`;
-    document.getElementById('btnNext').style.display = 'block';
-
-    // Update card visual
-    const card = document.querySelector(`.card-wrapper[data-index="${currentCardIndex}"]`);
-    if (card) {
-        card.classList.add('answered');
-        const backStatus = card.querySelector('.card-status');
-        const backText = card.querySelector('.card-status-text');
-        backStatus.textContent = isCorrect ? '✅' : '';
-        backText.textContent = isCorrect ? 'BENAR' : 'SALAH';
-    }
-
-    // Mark as used
-    answeredCards.add(currentCardIndex);
-    usedCardIndices.add(currentCardIndex);
-    cardResults[currentCardIndex] = { correct: isCorrect, studentName: currentPlayer };
-
-    saveCardResult(currentCardIndex, currentQuestion.arabic, currentPlayer, isCorrect, finalTime);
-
-    document.getElementById('remainingCards').textContent = 50 - usedCardIndices.size;
-}
-
-function nextQuestion() {
-    closeModal();
-    if (50 - usedCardIndices.size === 0) { showFinalScore(); return; }
-    const available = document.querySelectorAll('.card-wrapper:not(.answered):not(.disabled)');
-    if (available.length === 0) showFinalScore();
-}
-
-function closeModal() {
-    document.getElementById('questionModal').classList.remove('active');
-    clearInterval(timerInterval);
-}
-
-function showFinalScore() {
-    document.getElementById('cardScreen').classList.remove('active');
-    document.getElementById('finalScreen').classList.add('active');
-
-    const avgTime = questionsAnswered > 0 ? totalTime / questionsAnswered : 0;
-    const finalScore = totalCorrect * 125;
-
-    document.getElementById('finalScoreDisplay').textContent = finalScore;
-    document.getElementById('statCorrect').textContent = totalCorrect;
-    document.getElementById('statWrong').textContent = totalWrong;
-    document.getElementById('statAvgTime').textContent = avgTime.toFixed(1) + 's';
-
-    saveScore(currentPlayer, finalScore, totalCorrect, totalWrong, avgTime);
-}
-
-function resetGame() {
-    currentPlayer = ''; currentQuestion = null; currentCardIndex = -1;
-    answeredCards.clear(); totalCorrect = 0; totalWrong = 0;
-    totalTime = 0; questionsAnswered = 0;
-    document.getElementById('studentName').value = '';
-    document.getElementById('finalScreen').classList.remove('active');
-    document.getElementById('nameScreen').classList.add('active');
-    loadAllData();
-}
-
-document.addEventListener('keydown', (e) => {
-    const modal = document.getElementById('questionModal');
-    if (!modal.classList.contains('active')) return;
-    if (document.getElementById('btnNext').style.display !== 'none' && e.key === 'Enter') { nextQuestion(); return; }
-    const optBtns = document.querySelectorAll('.option-btn:not(.disabled)');
-    const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
-    if (keyMap[e.key.toLowerCase()] !== undefined && optBtns[keyMap[e.key.toLowerCase()]]) {
-        selectAnswer(keyMap[e.key.toLowerCase()], currentQuestion.correct, optBtns[keyMap[e.key.toLowerCase()]]);
-    }
-});
-</script>
-
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
