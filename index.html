@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="id" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembelajaran Interaktif - Zharful Makan & Bilangan Arab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Poppins:wght@300;400;600;700;800&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            min-height: 100vh; overflow-x: hidden; color: #fff;
+        }
+
+        .particles {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .particle {
+            position: absolute; width: 6px; height: 6px;
+            background: rgba(255,255,255,0.15); border-radius: 50%;
+            animation: floatParticle linear infinite;
+        }
+        @keyframes floatParticle {
+            0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 1; } 90% { opacity: 1; }
+            100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+        }
+
+        .app-container { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+
+        .sidebar {
+            width: 320px; background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; overflow-y: auto;
+            position: fixed; left: 0; top: 0; height: 100vh; z-index: 10;
+        }
+        .sidebar-title {
+            text-align: center; font-size: 1.3em; font-weight: 700; margin-bottom: 5px;
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .sidebar-subtitle { text-align: center; font-size: 0.75em; color: rgba(255,255,255,0.5); margin-bottom: 20px; }
+        .leaderboard-list { list-style: none; }
+        .leaderboard-item {
+            display: flex; align-items: center; padding: 12px 15px;
+            margin-bottom: 8px; border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: all 0.3s; animation: slideIn 0.5s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-30px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .leaderboard-item:hover { background: rgba(255,255,255,0.1); transform: translateX(5px); }
+        .rank-badge {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 0.9em; margin-right: 12px; flex-shrink: 0;
+        }
+        .rank-1 { background: linear-gradient(135deg, #FFD700, #FFA500); color: #000; }
+        .rank-2 { background: linear-gradient(135deg, #C0C0C0, #A0A0A0); color: #000; }
+        .rank-3 { background: linear-gradient(135deg, #CD7F32, #B87333); color: #fff; }
+        .rank-default { background: rgba(255,255,255,0.1); color: #fff; }
+        .player-info { flex: 1; }
+        .player-name { font-weight: 600; font-size: 0.9em; }
+        .player-time { font-size: 0.7em; color: rgba(255,255,255,0.4); }
+        .player-score { font-weight: 800; font-size: 1.1em; color: #ffd200; }
+        .no-data { text-align: center; color: rgba(255,255,255,0.3); padding: 40px 20px; font-size: 0.9em; }
+
+        .main-content {
+            flex: 1; margin-left: 320px; padding: 30px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .header { text-align: center; margin-bottom: 30px; width: 100%; max-width: 900px; }
+        .header h1 {
+            font-size: 2em; font-weight: 800;
+            background: linear-gradient(90deg, #f7971e, #ffd200, #f7971e);
+            background-size: 200% auto;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite; margin-bottom: 5px;
+        }
+        @keyframes shimmer { 0% { background-position: 0% center; } 100% { background-position: 200% center; } }
+        .header .arabic-title { font-family: 'Amiri', serif; font-size: 1.5em; color: rgba(255,255,255,0.6); direction: rtl; }
+        .header .subtitle { color: rgba(255,255,255,0.5); font-size: 0.85em; margin-top: 5px; }
+
+        .screen { display: none; width: 100%; max-width: 900px; animation: fadeIn 0.5s ease; }
+        .screen.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .name-screen { text-align: center; padding: 40px 20px; }
+        .name-screen .welcome-icon { font-size: 4em; margin-bottom: 20px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .name-screen h2 { font-size: 1.8em; margin-bottom: 10px; }
+        .name-screen p { color: rgba(255,255,255,0.6); margin-bottom: 30px; }
+        .name-input-group { display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px; }
+        .name-input-group input {
+            flex: 1; padding: 15px 20px; border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 15px; background: rgba(255,255,255,0.08); color: #fff;
+            font-size: 1.1em; font-family: 'Poppins', sans-serif;
+            outline: none; transition: all 0.3s;
+        }
+        .name-input-group input:focus { border-color: #ffd200; box-shadow: 0 0 20px rgba(255,210,0,0.2); }
+        .name-input-group input::placeholder { color: rgba(255,255,255,0.3); }
+        .btn-start {
+            padding: 15px 40px; background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #000; border: none; border-radius: 15px; font-size: 1.1em;
+            font-weight: 700; font-family: 'Poppins', sans-serif;
+            cursor: pointer; transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,210,0,0.3); }
+        .btn-start:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .cards-info {
+            text-align: center; margin-bottom: 15px; padding: 10px 20px;
+            background: rgba(255,255,255,0.05); border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .cards-info span { color: #ffd200; font-weight: 700; }
+
+        .cards-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 15px; width: 100%; max-width: 900px; margin: 0 auto;
+        }
+        .card-wrapper { perspective: 1000px; height: 130px; cursor: pointer; }
+        .card-wrapper.disabled { pointer-events: none; }
+        .card-inner {
+            position: relative; width: 100%; height: 100%;
+            transition: transform 0.6s; transform-style: preserve-3d;
+        }
+        .card-wrapper.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden; border-radius: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .card-front {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border: 2px solid rgba(255,255,255,0.15); transition: all 0.3s;
+        }
+        .card-wrapper:hover .card-front:not(.used) {
+            border-color: rgba(255,210,0,0.5);
+            box-shadow: 0 5px 20px rgba(255,210,0,0.15);
+            transform: translateY(-3px);
+        }
+        .card-front .card-number { font-size: 2.2em; font-weight: 800; color: rgba(255,255,255,0.4); }
+        .card-front .card-question-mark { font-size: 1.2em; color: rgba(255,255,255,0.2); margin-top: 2px; }
+        .card-front.used { opacity: 0.35; border-color: rgba(255,255,255,0.05); cursor: not-allowed; }
+        .card-front.used .card-number { color: rgba(255,255,255,0.2); }
+        .card-used-badge { display: none; font-size: 0.65em; color: rgba(255,255,255,0.3); margin-top: 5px; font-weight: 600; }
+        .card-front.used .card-used-badge { display: block; }
+        .card-back { background: linear-gradient(135deg, #f7971e, #ffd200); transform: rotateY(180deg); color: #000; }
+        .card-back .card-status { font-size: 2em; }
+        .card-back .card-status-text { font-size: 0.75em; font-weight: 700; margin-top: 5px; }
+        .card-wrapper.answered .card-front { border-color: rgba(255,255,255,0.05); opacity: 0.4; }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px); z-index: 100;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; animation: fadeIn 0.3s ease; }
+        .modal {
+            background: linear-gradient(135deg, #1a1a3e, #2d2d6e);
+            border-radius: 25px; padding: 35px; max-width: 650px; width: 100%;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            position: relative; max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .timer-display { display: flex; align-items: center; gap: 8px; font-size: 1.1em; font-weight: 700; color: #ffd200; }
+        .timer-display .timer-icon { font-size: 1.2em; }
+        .question-text { font-size: 1.15em; font-weight: 600; margin-bottom: 10px; line-height: 1.6; }
+        .question-arabic {
+            font-family: 'Amiri', serif; font-size: 2.2em; text-align: center;
+            direction: rtl; color: #ffd200; margin: 15px 0 25px; padding: 20px;
+            background: rgba(255,210,0,0.05); border-radius: 15px;
+            border: 1px solid rgba(255,210,0,0.15); line-height: 1.8;
+        }
+        .options-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+        .option-btn {
+            padding: 18px 20px; border: 2px solid rgba(255,255,255,0.15);
+            border-radius: 15px; background: rgba(255,255,255,0.05); color: #fff;
+            font-size: 1em; font-family: 'Poppins', sans-serif;
+            cursor: pointer; transition: all 0.3s; text-align: center;
+        }
+        .option-btn:hover:not(.disabled) { border-color: #ffd200; background: rgba(255,210,0,0.1); transform: translateY(-2px); }
+        .option-btn .option-label {
+            display: inline-block; width: 28px; height: 28px; border-radius: 50%;
+            background: rgba(255,255,255,0.1); line-height: 28px; text-align: center;
+            margin-right: 10px; font-weight: 700; font-size: 0.85em;
+        }
+        .option-btn.correct { border-color: #4CAF50; background: rgba(76,175,80,0.2); animation: correctPulse 0.5s ease; }
+        .option-btn.wrong { border-color: #f44336; background: rgba(244,67,54,0.2); animation: shake 0.5s ease; }
+        .option-btn.disabled { cursor: default; opacity: 0.6; }
+        @keyframes correctPulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+        .result-display { text-align: center; padding: 20px; border-radius: 15px; margin-top: 15px; display: none; }
+        .result-display.show { display: block; animation: fadeIn 0.5s ease; }
+        .result-display.correct-result { background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); }
+        .result-display.wrong-result { background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.3); }
+        .result-emoji { font-size: 3em; margin-bottom: 10px; }
+        .result-text { font-size: 1.2em; font-weight: 700; margin-bottom: 5px; }
+        .result-score { font-size: 0.9em; color: rgba(255,255,255,0.6); }
+
+        .btn-next {
+            display: block; margin: 20px auto 0; padding: 12px 35px;
+            background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #000; border: none; border-radius: 12px;
+            font-size: 1em; font-weight: 700; font-family: 'Poppins', sans-serif;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .btn-next:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(255,210,0,0.3); }
+        .btn-close-modal {
+            position: absolute; top: 15px; right: 20px;
+            background: none; border: none; color: rgba(255,255,255,0.5);
+            font-size: 1.5em; cursor: pointer; transition: color 0.3s;
+        }
+        .btn-close-modal:hover { color: #fff; }
+
+        .final-screen { text-align: center; padding: 40px 20px; }
+        .final-screen .trophy { font-size: 5em; animation: bounce 2s infinite; }
+        .final-screen h2 {
+            font-size: 2em; margin: 20px 0 10px;
+            background: linear-gradient(90deg, #f7971e, #ffd200);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .final-score-display { font-size: 4em; font-weight: 800; color: #ffd200; margin: 20px 0; }
+        .final-stats { display: flex; justify-content: center; gap: 30px; margin: 20px 0 30px; flex-wrap: wrap; }
+        .stat-box {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 15px; padding: 20px 30px; text-align: center;
+        }
+        .stat-box .stat-value { font-size: 1.8em; font-weight: 800; color: #ffd200; }
+        .stat-box .stat-label { font-size: 0.8em; color: rgba(255,255,255,0.5); margin-top: 5px; }
+        .btn-restart {
+            padding: 15px 40px; background: linear-gradient(135deg, #f7971e, #ffd200);
+            color: #000; border: none; border-radius: 15px; font-size: 1.1em;
+            font-weight: 700; font-family: 'Poppins', sans-serif;
+            cursor: pointer; transition: all 0.3s; margin: 10px;
+        }
+        .btn-restart:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,210,0,0.3); }
+
+        .loading-overlay {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.7);
+            z-index: 200; align-items: center; justify-content: center;
+            flex-direction: column; gap: 15px;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 50px; height: 50px; border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #ffd200; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { color: rgba(255,255,255,0.7); font-size: 0.9em; }
+
+        .toast {
+            position: fixed; bottom: 30px; right: 30px;
+            padding: 15px 25px; border-radius: 12px;
+            font-size: 0.9em; font-weight: 600; z-index: 300;
+            transform: translateY(100px); opacity: 0; transition: all 0.4s ease;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: rgba(76,175,80,0.9); color: #fff; }
+        .toast.error { background: rgba(244,67,54,0.9); color: #fff; }
+        .toast.info { background: rgba(33,150,243,0.9); color: #fff; }
+
+        @media (max-width: 1024px) { .sidebar { width: 260px; } .main-content { margin-left: 260px; } }
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; height: auto; position: relative; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); }
+            .main-content { margin-left: 0; } .app-container { flex-direction: column; }
+            .cards-grid { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+            .card-wrapper { height: 100px; } .options-list { grid-template-columns: 1fr; }
+            .header h1 { font-size: 1.4em; }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Memuat data...</div>
+</div>
+<div class="toast" id="toast"></div>
+
+<div class="app-container">
+    <aside class="sidebar">
+        <div class="sidebar-title">🏆 PAPAN PERINGKAT</div>
+        <div class="sidebar-subtitle">Leaderboard Siswa</div>
+        <ul class="leaderboard-list" id="leaderboardList">
+            <li class="no-data" id="noDataMsg">Belum ada siswa yang mengerjakan</li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <div class="header">
+            <h1>📚 Pembelajaran Interaktif</h1>
+            <div class="arabic-title">ظَرْفُ الْمَكَان وَ الْأَعْدَاد</div>
+            <div class="subtitle">Zharful Makan (Keterangan Tempat) & Bilangan Nominal 1-20</div>
+        </div>
+
+        <div class="screen active" id="nameScreen">
+            <div class="name-screen">
+                <div class="welcome-icon">🎓</div>
+                <h2>Selamat Datang!</h2>
+                <p>Masukkan namamu untuk mulai bermain. Pilih satu kartu dan jawab pertanyaannya!</p>
+                <div class="name-input-group">
+                    <input type="text" id="studentName" placeholder="Ketik namamu di sini..." maxlength="30" autocomplete="off">
+                    <button class="btn-start" id="btnStart" onclick="startGame()">MULAI 🚀</button>
+                </div>
+                <p style="font-size:0.75em; color:rgba(255,255,255,0.3); margin-top:15px;"> Skor dihitung dari jawaban benar + kecepatan menjawab</p>
+                <div id="cardsRemainingInfo" style="margin-top:15px; font-size:0.85em; color:rgba(255,255,255,0.4);"></div>
+            </div>
+        </div>
+
+        <div class="screen" id="cardScreen">
+            <div class="cards-info">
+                Pemain: <span id="currentPlayerName"></span>
+                &nbsp;|&nbsp; Kartu tersisa: <span id="remainingCards">50</span> dari 50
+            </div>
+            <div class="cards-grid" id="cardsGrid"></div>
+        </div>
+
+        <div class="screen" id="finalScreen">
+            <div class="final-screen">
+                <div class="trophy">🏆</div>
+                <h2>Permainan Selesai!</h2>
+                <p style="color:rgba(255,255,255,0.6);">Skor akhir kamu:</p>
+                <div class="final-score-display" id="finalScoreDisplay">0</div>
+                <div class="final-stats">
+                    <div class="stat-box"><div class="stat-value" id="statCorrect">0</div><div class="stat-label">Benar</div></div>
+                    <div class="stat-box"><div class="stat-value" id="statWrong">0</div><div class="stat-label">Salah</div></div>
+                    <div class="stat-box"><div class="stat-value" id="statAvgTime">0s</div><div class="stat-label">Rata-rata Waktu</div></div>
+                </div>
+                <button class="btn-restart" onclick="resetGame()">🔄 Main Lagi</button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<div class="modal-overlay" id="questionModal">
+    <div class="modal">
+        <button class="btn-close-modal" onclick="closeModal()">✕</button>
+        <div class="modal-header">
+            <div class="timer-display"><span class="timer-icon">⏱️</span><span id="timerValue">0.0s</span></div>
+        </div>
+        <div class="question-text" id="questionText"></div>
+        <div class="question-arabic" id="questionArabic"></div>
+        <div class="options-list" id="optionsList"></div>
+        <div class="result-display" id="resultDisplay">
+            <div class="result-emoji" id="resultEmoji"></div>
+            <div class="result-text" id="resultText"></div>
+            <div class="result-score" id="resultScore"></div>
+        </div>
+        <button class="btn-next" id="btnNext" style="display:none;" onclick="nextQuestion()">Kartu Berikutnya ➡️</button>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// ⚠️ GANTI URL DI BAWAH INI DENGAN URL APPS SCRIPT ANDA
+// ============================================================
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyHO8t9MFEaRUeXW6iHUjHya4znrqOH0FiD6ZSOWFKIYS62alui5wZL-NvsomfsdOs/exec';
+// ============================================================
+
+// ===== QUESTIONS DATABASE =====
+const allQuestions = [
+    // === ZHARFUL MAKAN - 25 soal ===
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'السَّاعَةُ ...... السَّبُّورَةِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'],
+        correct: 0
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'السَّبُّورَةُ ...... السَّاعَةِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'خَلْفَ'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الأُسْتَاذُ ...... السَّبُّورَةِ وَالْمَكْتَبِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْكِتَابُ ...... الْمَكْتَبِ',
+        options: ['تَحْتَ', 'فَوْقَ', 'بَيْنَ', 'خَلْفَ'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْحَقِيبَةُ ...... الْمَكْتَبِ',
+        options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'التِّلْمِيْذُ ...... الْكُرْسِيِّ',
+        options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْبِلَاطُ ...... الْكُرْسِيِّ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'السَّقْفُ ...... الْفَصْلِ',
+        options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْقَلَمُ ...... الْكِتَابِ وَالْمِسْطَرَةِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْمَكْتَبُ ...... الْكُرْسِيِّ وَالسَّبُّورَةِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الصُّورَةُ ...... السَّبُّورَةِ',
+        options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْمِمْحَاةُ ...... الطَّبْشُورَةِ وَالْقَلَمِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْحِذَاءُ ...... الْمَكْتَبِ',
+        options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْمِصْبَاحُ ...... طَاوِلَةِ الْمُعَلِّمِ',
+        options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْكُرَةُ ...... الْكُرْسِيِّ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الطَّالِبُ جَالِسٌ ...... صَدِيقَيْنِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْقُبَّعَةُ ...... الرَّفِّ',
+        options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'الْكِتَابُ ...... كِتَابِ الدَّرْسِ',
+        options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Apa arti kata berikut dalam bahasa Indonesia?',
+        arabic: 'فَوْقَ = ؟',
+        options: ['Di bawah', 'Di atas', 'Di antara', 'Di dalam'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Apa arti kata berikut dalam bahasa Indonesia?',
+        arabic: 'تَحْتَ = ؟',
+        options: ['Di atas', 'Di antara', 'Di bawah', 'Di samping'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Apa arti kata berikut dalam bahasa Indonesia?',
+        arabic: 'بَيْنَ = ؟',
+        options: ['Di atas', 'Di bawah', 'Di belakang', 'Di antara'],
+        correct: 3
+    },
+    {
+        category: 'zharful',
+        question: 'Apa arti istilah berikut dalam bahasa Indonesia?',
+        arabic: 'ظَرْفُ الْمَكَان = ؟',
+        options: ['Keterangan waktu', 'Keterangan tempat', 'Kata benda', 'Kata kerja'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Manakah yang BUKAN termasuk Zharful Makan?',
+        arabic: 'ظَرْفُ الْمَكَان',
+        options: ['فَوْقَ', 'تَحْتَ', 'كَبِيرٌ', 'بَيْنَ'],
+        correct: 2
+    },
+    {
+        category: 'zharful',
+        question: 'Apa lawan kata dari تَحْتَ (di bawah)?',
+        arabic: 'تَحْتَ ↔ ؟',
+        options: ['بَيْنَ', 'فَوْقَ', 'فِي', 'عَلَى'],
+        correct: 1
+    },
+    {
+        category: 'zharful',
+        question: 'Lengkapilah kalimat berikut dengan Zharful Makan yang tepat:',
+        arabic: 'التِّلْمِيْذُ ...... الْفَصْلِ',
+        options: ['تَحْتَ', 'بَيْنَ', 'فِي', 'فَوْقَ'],
+        correct: 2
+    },
+
+    // === BILANGAN 1-20 - 25 soal BERPIKIR ===
+    // Tipe 1: Penjumlahan sederhana (angka Arab + angka Arab)
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan berikut:',
+        arabic: 'أَرْبَعَةٌ + خَمْسَةٌ = ؟',
+        options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'عَشَرَةٌ'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan berikut:',
+        arabic: 'ثَلَاثَةٌ + سَبْعَةٌ = ؟',
+        options: ['خَمْسَةٌ', 'سِتَّةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan berikut:',
+        arabic: 'سِتَّةٌ + أَرْبَعَةٌ = ؟',
+        options: ['سَبْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan berikut:',
+        arabic: 'خَمْسَةٌ + خَمْسَةٌ = ؟',
+        options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan berikut:',
+        arabic: 'تِسْعَةٌ + وَاحِدٌ = ؟',
+        options: ['عَشَرَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'أَحَدَ عَشَرَ'],
+        correct: 0
+    },
+    // Tipe 2: Pengurangan
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil pengurangan berikut:',
+        arabic: 'عَشَرَةٌ - ثَلَاثَةٌ = ؟',
+        options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil pengurangan berikut:',
+        arabic: 'ثَمَانِيَةٌ - خَمْسَةٌ = ؟',
+        options: ['أَرْبَعَةٌ', 'ثَلَاثَةٌ', 'اِثْنَانِ', 'خَمْسَةٌ'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil pengurangan berikut:',
+        arabic: 'عِشْرُونَ - عَشَرَةٌ = ؟',
+        options: ['خَمْسَةٌ', 'سَبْعَةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil pengurangan berikut:',
+        arabic: 'سَبْعَةٌ - أَرْبَعَةٌ = ؟',
+        options: ['اِثْنَانِ', 'ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ'],
+        correct: 1
+    },
+    // Tipe 3: Angka Arab (١, ٢, ٣...) dijumlahkan
+    {
+        category: 'bilangan',
+        question: 'Hitunglah menggunakan angka Arab berikut:',
+        arabic: ' + ٣ = ؟',
+        options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah menggunakan angka Arab berikut:',
+        arabic: '٧ - ٢ = ؟',
+        options: ['ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah menggunakan angka Arab berikut:',
+        arabic: '٨ + ٧ = ؟',
+        options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'خَمْسَةَ عَشَرَ'],
+        correct: 3
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah menggunakan angka Arab berikut:',
+        arabic: '١ - ٥ = ؟',
+        options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'],
+        correct: 3
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah menggunakan angka Arab berikut:',
+        arabic: '٦ +  = ؟',
+        options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'ثَلَاثَةَ عَشَرَ'],
+        correct: 2
+    },
+    // Tipe 4: Perkalian sederhana
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil perkalian berikut:',
+        arabic: 'اِثْنَانِ × ثَلَاثَةٌ = ؟',
+        options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil perkalian berikut:',
+        arabic: 'أَرْبَعَةٌ × اِثْنَانِ = ؟',
+        options: ['سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'],
+        correct: 2
+    },
+    // Tipe 5: Tiga bilangan dijumlahkan
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan tiga bilangan berikut:',
+        arabic: '٥ + ٥ + ٥ = ؟',
+        options: ['عَشَرَةٌ', 'خَمْسَةَ عَشَرَ', 'عِشْرُونَ', 'تِسْعَةٌ'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Hitunglah hasil penjumlahan berikut:',
+        arabic: 'أَرْبَعَةٌ + سَبْعَةٌ = ؟',
+        options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'],
+        correct: 2
+    },
+    // Tipe 6: Pola bilangan
+    {
+        category: 'bilangan',
+        question: 'Lengkapilah pola bilangan berikut:',
+        arabic: '٢ ، ٤ ، ٦ ، ٨ ، ... = ؟',
+        options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Lengkapilah pola bilangan berikut:',
+        arabic: '١ ، ٣ ، ٥ ، ٧ ، ... = ؟',
+        options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'],
+        correct: 2
+    },
+    // Tipe 7: Perbandingan - mana yang lebih besar
+    {
+        category: 'bilangan',
+        question: 'Manakah bilangan yang LEBIH BESAR?',
+        arabic: 'تِسْعَةٌ أمْ سَبْعَةٌ ؟',
+        options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'Sama besar', 'Tidak tahu'],
+        correct: 1
+    },
+    {
+        category: 'bilangan',
+        question: 'Manakah bilangan yang LEBIH KECIL?',
+        arabic: 'عَشَرَةٌ أمْ خَمْسَةٌ ؟',
+        options: ['عَشَرَةٌ', 'خَمْسَةٌ', 'Sama besar', 'Tidak tahu'],
+        correct: 1
+    },
+    // Tipe 8: Soal cerita sederhana
+    {
+        category: 'bilangan',
+        question: 'Ahmad memiliki 3 buku, lalu ia mendapat 4 buku lagi. Berapa jumlah buku Ahmad sekarang?',
+        arabic: '٣ كُتُب + ٤ كُتُب = ؟',
+        options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'],
+        correct: 2
+    },
+    {
+        category: 'bilangan',
+        question: 'Di dalam kelas ada 10 siswa, 3 siswa pergi. Berapa siswa yang tersisa?',
+        arabic: '١٠ طُلَّاب - ٣ طُلَّاب = ؟',
+        options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'سِتَّةٌ'],
+        correct: 0
+    },
+    {
+        category: 'bilangan',
+        question: 'Fatimah punya 5 pensil, lalu diberi 6 pensil lagi. Berapa jumlah pensilnya?',
+        arabic: '٥ أَقْلَام + ٦ أَقْلَام = ؟',
+        options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'تِسْعَةٌ'],
+        correct: 1
+    }
+];
+
+// ===== GAME STATE =====
+let currentPlayer = '';
+let currentQuestion = null;
+let currentCardIndex = -1;
+let timerInterval = null;
+let timerStart = 0;
+let elapsed = 0;
+let answeredCards = new Set();
+let usedCardIndices = new Set();
+let cardResults = {};
+let totalCorrect = 0;
+let totalWrong = 0;
+let totalTime = 0;
+let questionsAnswered = 0;
+let leaderboardData = [];
+let shuffledQuestions = [];
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+    createParticles();
+    loadAllData();
+    document.getElementById('studentName').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') startGame();
+    });
+});
+
+function createParticles() {
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
+        container.appendChild(p);
+    }
+}
+
+function showToast(msg, type = 'info') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function showLoading(text = 'Memuat...') {
+    document.getElementById('loadingText').textContent = text;
+    document.getElementById('loadingOverlay').classList.add('active');
+}
+
+function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('active');
+}
+
+// ===== LEADERBOARD =====
+async function loadAllData() {
+    showLoading('Memuat data dari spreadsheet...');
+
+    if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') {
+        renderLeaderboard([]);
+        document.getElementById('cardsRemainingInfo').textContent = '⚠️ Mode offline - data tidak tersimpan ke spreadsheet';
+        hideLoading();
+        return;
+    }
+
+    try {
+        const res = await fetch(APPS_SCRIPT_URL + '?action=getAllData');
+        const data = await res.json();
+
+        if (data.success) {
+            leaderboardData = data.leaderboard || [];
+            const usedCards = data.usedCards || [];
+            const cardRes = data.cardResults || {};
+
+            usedCardIndices = new Set(usedCards);
+            cardResults = cardRes;
+
+            renderLeaderboard(leaderboardData);
+
+            const remaining = 50 - usedCardIndices.size;
+            document.getElementById('cardsRemainingInfo').textContent =
+                ` Kartu tersedia: ${remaining} dari 50 | Sudah dipakai: ${usedCardIndices.size}`;
+
+            if (remaining === 0) {
+                document.getElementById('cardsRemainingInfo').innerHTML =
+                    '⚠️ <strong style="color:#f44336;">Semua 50 kartu sudah dipakai!</strong> Reset diperlukan.';
+            }
+        }
+    } catch (e) {
+        console.log('Load error:', e);
+        renderLeaderboard([]);
+        showToast('Gagal memuat data. Coba refresh.', 'error');
+    }
+
+    hideLoading();
+}
+
+function renderLeaderboard(data) {
+    const list = document.getElementById('leaderboardList');
+
+    if (!data || data.length === 0) {
+        list.innerHTML = '<li class="no-data" id="noDataMsg">Belum ada siswa yang mengerjakan</li>';
+        return;
+    }
+
+    data.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (a.avgTime || 999) - (b.avgTime || 999);
+    });
+
+    list.innerHTML = '';
+    data.forEach((item, idx) => {
+        const rank = idx + 1;
+        const rankClass = rank <= 3 ? 'rank-' + rank : 'rank-default';
+        const li = document.createElement('li');
+        li.className = 'leaderboard-item';
+        li.style.animationDelay = (idx * 0.05) + 's';
+        li.innerHTML = `
+            <div class="rank-badge ${rankClass}">${rank <= 3 ? ['🥇','🥈','🥉'][rank-1] : rank}</div>
+            <div class="player-info">
+                <div class="player-name">${item.name}</div>
+                <div class="player-time">⏱ ${item.avgTime ? item.avgTime.toFixed(1) : 0}s | ✅ ${item.correct || 0} | ❌ ${item.wrong || 0}</div>
+            </div>
+            <div class="player-score">${item.score}</div>
+        `;
+        list.appendChild(li);
+    });
+}
+
+async function saveScore(name, score, correct, wrong, avgTime) {
+    if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') {
+        leaderboardData.push({ name, score, correct, wrong, avgTime });
+        renderLeaderboard(leaderboardData);
+        return;
+    }
+    try {
+        await fetch(APPS_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'saveScore', name, score, correct, wrong, avgTime })
+        });
+        setTimeout(() => loadAllData(), 1500);
+    } catch (e) { console.log('Save error:', e); }
+}
+
+async function saveCardResult(cardIndex, question, studentName, isCorrect, timeTaken) {
+    if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') {
+        usedCardIndices.add(cardIndex);
+        cardResults[cardIndex] = { correct: isCorrect, studentName };
+        return;
+    }
+    try {
+        await fetch(APPS_SCRIPT_URL, {
+            method: 'POST', mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'saveCardResult', cardIndex, question, studentName, isCorrect, timeTaken })
+        });
+    } catch (e) { console.log('Card save error:', e); }
+}
+
+// ===== START GAME =====
+function startGame() {
+    const name = document.getElementById('studentName').value.trim();
+    if (!name) {
+        showToast('Masukkan namamu terlebih dahulu!', 'error');
+        document.getElementById('studentName').focus();
+        return;
+    }
+
+    const remaining = 50 - usedCardIndices.size;
+    if (remaining === 0) {
+        showToast('Semua kartu sudah dipakai! Tidak ada kartu tersisa.', 'error');
+        return;
+    }
+
+    currentPlayer = name;
+    document.getElementById('currentPlayerName').textContent = name;
+    document.getElementById('nameScreen').classList.remove('active');
+    document.getElementById('cardScreen').classList.add('active');
+    generateCards();
+}
+
+// ===== GENERATE CARDS =====
+function generateCards() {
+    const grid = document.getElementById('cardsGrid');
+    grid.innerHTML = '';
+    answeredCards.clear();
+
+    shuffledQuestions = [...allQuestions].sort(() => Math.random() - 0.5);
+
+    for (let i = 0; i < 50; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-wrapper';
+        wrapper.dataset.index = i;
+        wrapper.dataset.question = JSON.stringify(shuffledQuestions[i]);
+
+        const isUsed = usedCardIndices.has(i);
+
+        if (isUsed) {
+            wrapper.classList.add('disabled');
+            const result = cardResults[i] || {};
+            const statusEmoji = result.correct ? '✅' : '❌';
+            const statusText = result.correct ? 'BENAR' : 'SALAH';
+            const studentName = result.studentName || '?';
+
+            wrapper.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front used">
+                        <div class="card-number">${i + 1}</div>
+                        <div class="card-used-badge">${statusEmoji} ${studentName}</div>
+                    </div>
+                    <div class="card-back">
+                        <div class="card-status">${statusEmoji}</div>
+                        <div class="card-status-text">${statusText}</div>
+                    </div>
+                </div>
+            `;
+            wrapper.classList.add('flipped');
+        } else {
+            wrapper.onclick = () => selectCard(wrapper);
+            wrapper.innerHTML = `
+                <div class="card-inner">
+                    <div class="card-front">
+                        <div class="card-number">${i + 1}</div>
+                        <div class="card-question-mark">❓</div>
+                    </div>
+                    <div class="card-back">
+                        <div class="card-status"></div>
+                        <div class="card-status-text">PILIH!</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        grid.appendChild(wrapper);
+    }
+
+    const remaining = 50 - usedCardIndices.size;
+    document.getElementById('remainingCards').textContent = remaining;
+}
+
+// ===== SELECT CARD =====
+function selectCard(wrapper) {
+    if (wrapper.classList.contains('answered') || wrapper.classList.contains('flipped')) return;
+    if (wrapper.classList.contains('disabled')) return;
+
+    const idx = parseInt(wrapper.dataset.index);
+    if (usedCardIndices.has(idx)) {
+        showToast('Kartu ini sudah dipakai siswa lain!', 'error');
+        return;
+    }
+
+    currentCardIndex = idx;
+    currentQuestion = JSON.parse(wrapper.dataset.question);
+
+    wrapper.classList.add('flipped');
+
+    setTimeout(() => {
+        showQuestion(currentQuestion);
+    }, 500);
+}
+
+// ===== SHOW QUESTION =====
+function showQuestion(q) {
+    const modal = document.getElementById('questionModal');
+    const qText = document.getElementById('questionText');
+    const qArabic = document.getElementById('questionArabic');
+    const optList = document.getElementById('optionsList');
+    const resultDiv = document.getElementById('resultDisplay');
+    const btnNext = document.getElementById('btnNext');
+
+    resultDiv.classList.remove('show', 'correct-result', 'wrong-result');
+    btnNext.style.display = 'none';
+    optList.innerHTML = '';
+
+    qText.textContent = q.question;
+    qArabic.textContent = q.arabic;
+
+    const labels = ['A', 'B', 'C', 'D'];
+    q.options.forEach((opt, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerHTML = `<span class="option-label">${labels[idx]}</span>${opt}`;
+        btn.onclick = () => selectAnswer(idx, q.correct, btn);
+        optList.appendChild(btn);
+    });
+
+    timerStart = Date.now();
+    elapsed = 0;
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        elapsed = (Date.now() - timerStart) / 1000;
+        document.getElementById('timerValue').textContent = elapsed.toFixed(1) + 's';
+    }, 100);
+
+    modal.classList.add('active');
+}
+
+// ===== SELECT ANSWER =====
+function selectAnswer(selected, correct, btn) {
+    clearInterval(timerInterval);
+    const finalTime = elapsed;
+
+    document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+
+    const resultDiv = document.getElementById('resultDisplay');
+    const resultEmoji = document.getElementById('resultEmoji');
+    const resultText = document.getElementById('resultText');
+    const resultScore = document.getElementById('resultScore');
+    const btnNext = document.getElementById('btnNext');
+
+    let score = 0;
+    const speedBonus = Math.max(0, Math.round(50 * (1 - finalTime / 30)));
+
+    const isCorrect = selected === correct;
+
+    if (isCorrect) {
+        btn.classList.add('correct');
+        score = 100 + speedBonus;
+        totalCorrect++;
+        resultDiv.className = 'result-display show correct-result';
+        resultEmoji.textContent = '';
+        resultText.textContent = 'Benar! Hebat!';
+        resultText.style.color = '#4CAF50';
+    } else {
+        btn.classList.add('wrong');
+        document.querySelectorAll('.option-btn')[correct].classList.add('correct');
+        score = 0;
+        totalWrong++;
+        resultDiv.className = 'result-display show wrong-result';
+        resultEmoji.textContent = '😔';
+        resultText.textContent = 'Kurang tepat!';
+        resultText.style.color = '#f44336';
+    }
+
+    totalTime += finalTime;
+    questionsAnswered++;
+
+    resultScore.textContent = `Skor: +${score} poin | Waktu: ${finalTime.toFixed(1)}s | Bonus kecepatan: +${speedBonus}`;
+    btnNext.style.display = 'block';
+
+    const card = document.querySelector(`.card-wrapper[data-index="${currentCardIndex}"]`);
+    if (card) {
+        card.classList.add('answered');
+        const backStatus = card.querySelector('.card-status');
+        const backText = card.querySelector('.card-status-text');
+        if (isCorrect) {
+            backStatus.textContent = '✅';
+            backText.textContent = 'BENAR';
+        } else {
+            backStatus.textContent = '❌';
+            backText.textContent = 'SALAH';
+        }
+    }
+
+    answeredCards.add(currentCardIndex);
+    usedCardIndices.add(currentCardIndex);
+    cardResults[currentCardIndex] = { correct: isCorrect, studentName: currentPlayer };
+
+    saveCardResult(currentCardIndex, currentQuestion.arabic, currentPlayer, isCorrect, parseFloat(finalTime.toFixed(1)));
+
+    const remaining = 50 - usedCardIndices.size;
+    document.getElementById('remainingCards').textContent = remaining;
+}
+
+// ===== NEXT QUESTION =====
+function nextQuestion() {
+    closeModal();
+
+    const remaining = 50 - usedCardIndices.size;
+    if (remaining === 0) {
+        showFinalScore();
+        return;
+    }
+
+    const availableCards = document.querySelectorAll('.card-wrapper:not(.answered):not(.disabled)');
+    if (availableCards.length === 0) {
+        showFinalScore();
+    }
+}
+
+function closeModal() {
+    document.getElementById('questionModal').classList.remove('active');
+    clearInterval(timerInterval);
+}
+
+// ===== FINAL SCORE =====
+function showFinalScore() {
+    document.getElementById('cardScreen').classList.remove('active');
+    document.getElementById('finalScreen').classList.add('active');
+
+    const avgTime = questionsAnswered > 0 ? totalTime / questionsAnswered : 0;
+    const finalScore = totalCorrect * 125;
+
+    document.getElementById('finalScoreDisplay').textContent = finalScore;
+    document.getElementById('statCorrect').textContent = totalCorrect;
+    document.getElementById('statWrong').textContent = totalWrong;
+    document.getElementById('statAvgTime').textContent = avgTime.toFixed(1) + 's';
+
+    saveScore(currentPlayer, finalScore, totalCorrect, totalWrong, avgTime);
+}
+
+// ===== RESET =====
+function resetGame() {
+    currentPlayer = '';
+    currentQuestion = null;
+    currentCardIndex = -1;
+    answeredCards.clear();
+    totalCorrect = 0;
+    totalWrong = 0;
+    totalTime = 0;
+    questionsAnswered = 0;
+
+    document.getElementById('studentName').value = '';
+    document.getElementById('finalScreen').classList.remove('active');
+    document.getElementById('nameScreen').classList.add('active');
+
+    loadAllData();
+}
+
+// ===== KEYBOARD SHORTCUT =====
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('questionModal');
+    if (!modal.classList.contains('active')) return;
+
+    const btnNext = document.getElementById('btnNext');
+    if (btnNext.style.display !== 'none' && e.key === 'Enter') {
+        nextQuestion();
+        return;
+    }
+
+    const optBtns = document.querySelectorAll('.option-btn:not(.disabled)');
+    const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3 };
+    if (keyMap[e.key.toLowerCase()] !== undefined && optBtns[keyMap[e.key.toLowerCase()]]) {
+        const q = currentQuestion;
+        selectAnswer(keyMap[e.key.toLowerCase()], q.correct, optBtns[keyMap[e.key.toLowerCase()]]);
+    }
+});
+</script>
+
+</body>
+</html>
