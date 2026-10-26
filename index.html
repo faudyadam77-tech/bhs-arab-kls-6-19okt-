@@ -266,6 +266,18 @@
             background: linear-gradient(135deg, #ffffff 0%, #fbbf24 100%);
         }
         
+        .progress-badge {
+            display: inline-block;
+            background: rgba(254, 240, 138, 0.25);
+            border: 1.5px solid #fef08a;
+            color: #fef08a;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+        }
+
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -542,6 +554,49 @@
         
         .status-indicator.online { background: rgba(34, 197, 94, 0.28); color: #86efac; border: 1.5px solid rgba(34, 197, 94, 0.5); }
         .status-indicator.offline { background: rgba(239, 68, 68, 0.28); color: #fca5a5; border: 1.5px solid rgba(239, 68, 68, 0.5); }
+        
+        /* Toast & Loading */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 14px 24px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.9);
+            color: #fff;
+            font-weight: 600;
+            z-index: 2000;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .toast.show { display: block; animation: bounceIn 0.3s; }
+        .toast.success { border-left: 5px solid #22c55e; }
+        .toast.error { border-left: 5px solid #ef4444; }
+        .toast.info { border-left: 5px solid #38bdf8; }
+
+        .loading {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(5px);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .loading.active { display: flex; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: #fef08a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -567,13 +622,13 @@
                 <div class="screen active" id="nameScreen">
                     <div class="name-input-section">
                         <h2>🎓 Selamat Datang!</h2>
-                        <p>Masukkan namamu untuk mulai bermain. Pilih satu kartu dan jawab soal!</p>
+                        <p>Masukkan namamu untuk mulai bermain. Setiap siswa berhak mengerjakan <strong>10 Kartu Soal</strong>!</p>
                         <div class="input-group">
                             <input type="text" id="studentName" placeholder="Ketik namamu..." maxlength="30">
                             <button class="btn" onclick="startGame()">MULAI</button>
                         </div>
-                        <p style="font-size: 0.85em; opacity: 0.7;">
-                            💡 Setiap siswa menjawab 1 kartu. Setelah selesai, siswa berikutnya memasukkan nama.
+                        <p style="font-size: 0.85em; opacity: 0.8;">
+                            💡 Data hasil pengerjaan akan otomatis terkirim ke Spreadsheet setelah 10 kartu selesai dikerjakan.
                         </p>
                         <div id="cardsInfo" style="margin-top: 20px; font-size: 0.9em; opacity: 0.8;"></div>
                     </div>
@@ -581,8 +636,11 @@
                 
                 <!-- Screen 2: Pilih Kartu -->
                 <div class="screen" id="cardScreen">
-                    <h2 style="text-align: center; margin-bottom: 10px;">Pilih Satu Kartu</h2>
-                    <p style="text-align: center; opacity: 0.8; margin-bottom: 20px;">
+                    <h2 style="text-align: center; margin-bottom: 6px;">Pilih Kartu Soal</h2>
+                    <div style="text-align: center; margin-bottom: 16px;">
+                        <span class="progress-badge" id="playerProgressBadge">Kartu Ke-1 dari 10</span>
+                    </div>
+                    <p style="text-align: center; opacity: 0.95; margin-bottom: 20px;">
                         Pemain: <strong id="currentPlayer" style="color: #FFD700;"></strong>
                     </p>
                     <div class="cards-grid" id="cardsGrid"></div>
@@ -618,41 +676,42 @@
 
     <script>
         // ============================================
-        // KONFIGURASI - GANTI DENGAN URL ANDA
+        // KONFIGURASI - URL GOOGLE APPS SCRIPT
         // ============================================
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXhKPF1CsONSEQgBfZuzw2opyGB_CrLZ-DXoEvXAD6QlFZIz0vaaeewF1eDjBFWG0/exec';
+        const TOTAL_CARDS_PER_STUDENT = 10; // Jatah 10 kartu per siswa
         // ============================================
 
-        // Data soal
+        // Data soal (50 Soal) - Kosakata disederhanakan hanya: الكتاب, المكتب, الفصل, الأستاذ, التلميذ, الساعة, السبورة, القلم, الكرسي
         const allQuestions = [
-            // ZHARFUL MAKAN - 25 soal
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'السَّاعَةُ ...... السَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 0 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'السَّبُّورَةُ ...... السَّاعَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'خَلْفَ'], correct: 1 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الأُسْتَاذُ ...... السَّبُّورَةِ وَالْمَكْتَبِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْكِتَابُ ...... الْمَكْتَبِ', options: ['تَحْتَ', 'فَوْقَ', 'بَيْنَ', 'خَلْفَ'], correct: 1 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْحَقِيبَةُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْكُرْسِيِّ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْبِلَاطُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'السَّقْفُ ...... الْفَصْلِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْقَلَمُ ...... الْكِتَابِ وَالْمِسْطَرَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْمَكْتَبُ ...... الْكُرْسِيِّ وَالسَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الصُّورَةُ ...... السَّبُّورَةِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْمِمْحَاةُ ...... الطَّبْشُورَةِ وَالْقَلَمِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْحِذَاءُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'بَيْنَ', 'تَحْتَ', 'أَمَامَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْمِصْبَاحُ ...... طَاوِلَةِ الْمُعَلِّمِ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْكُرَةُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الطَّالِبُ جَالِسٌ ...... صَدِيقَيْنِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'فِي'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْقُبَّعَةُ ...... الرَّفِّ', options: ['تَحْتَ', 'بَيْنَ', 'فَوْقَ', 'خَلْفَ'], correct: 2 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'الْكِتَابُ ...... كِتَابِ الدَّرْسِ', options: ['فَوْقَ', 'تَحْتَ', 'بَيْنَ', 'أَمَامَ'], correct: 1 },
-            { category: 'zharful', question: 'Apa arti kata berikut?', arabic: 'فَوْقَ = ؟', options: ['Di bawah', 'Di atas', 'Di antara', 'Di dalam'], correct: 1 },
-            { category: 'zharful', question: 'Apa arti kata berikut?', arabic: 'تَحْتَ = ؟', options: ['Di atas', 'Di antara', 'Di bawah', 'Di samping'], correct: 2 },
-            { category: 'zharful', question: 'Apa arti kata berikut?', arabic: 'بَيْنَ = ؟', options: ['Di atas', 'Di bawah', 'Di belakang', 'Di antara'], correct: 3 },
-            { category: 'zharful', question: 'Apa arti istilah berikut?', arabic: 'ظَرْفُ الْمَكَان = ؟', options: ['Keterangan waktu', 'Keterangan tempat', 'Kata benda', 'Kata kerja'], correct: 1 },
-            { category: 'zharful', question: 'Manakah yang BUKAN Zharful Makan?', arabic: 'ظَرْفُ الْمَكَان', options: ['فَوْقَ', 'تَحْتَ', 'كَبِيرٌ', 'بَيْنَ'], correct: 2 },
-            { category: 'zharful', question: 'Apa lawan kata dari تَحْتَ?', arabic: 'تَحْتَ ↔ ؟', options: ['بَيْنَ', 'فَوْقَ', 'فِي', 'عَلَى'], correct: 1 },
-            { category: 'zharful', question: 'Lengkapilah dengan Zharful Makan yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْفَصْلِ', options: ['تَحْتَ', 'بَيْنَ', 'فِي', 'فَوْقَ'], correct: 2 },
+            // ZHARFUL MAKAN (25 soal)
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْكِتَابُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'تَحْتَ', 'خَلْفَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْقَلَمُ ...... الْمَكْتَبِ', options: ['تَحْتَ', 'فَوْقَ', 'خَلْفَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الأُسْتَاذُ ...... السَّبُّورَةِ', options: ['أَمَامَ', 'تَحْتَ', 'فَوْقَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'التِّلْمِيْذُ ...... الأُسْتَاذِ', options: ['خَلْفَ', 'فَوْقَ', 'تَحْتَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'السَّاعَةُ ...... السَّبُّورَةِ', options: ['فَوْقَ', 'تَحْتَ', 'خَلْفَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْكِتَابُ ...... الْكُرْسِيِّ', options: ['فَوْقَ', 'تَحْتَ', 'أَمَامَ', 'خَلْفَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْكُرْسِيُّ ...... الْمَكْتَبِ', options: ['خَلْفَ', 'فَوْقَ', 'تَحْتَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْقَلَمُ ...... الْكِتَابِ', options: ['فَوْقَ', 'تَحْتَ', 'خَلْفَ', 'أَمَامَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'السَّاعَةُ ...... الْمَكْتَبِ', options: ['فَوْقَ', 'تَحْتَ', 'خَلْفَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah meperhatikan kata tempat:', arabic: 'الْقَلَمُ ...... الْكِتَابِ وَالْكُرْسِيِّ', options: ['بَيْنَ', 'فَوْقَ', 'تَحْتَ', 'أَمَامَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah memperhatikan kata tempat:', arabic: 'الْمَكْتَبُ ...... الْكُرْسِيِّ وَالسَّبُّورَةِ', options: ['بَيْنَ', 'فَوْقَ', 'تَحْتَ', 'خَلْفَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah memperhatikan kata tempat:', arabic: 'الأُسْتَاذُ ...... التِّلْمِيْذِ وَالسَّبُّورَةِ', options: ['بَيْنَ', 'فَوْقَ', 'تَحْتَ', 'أَمَامَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'السَّبُّورَةُ ...... الْفَصْلِ', options: ['فِي', 'تَحْتَ', 'خَلْفَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'التِّلْمِيْذُ ...... الْفَصْلِ', options: ['فِي', 'فَوْقَ', 'تَحْتَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الأُسْتَاذُ ...... الْفَصْلِ', options: ['فِي', 'تَحْتَ', 'فَوْقَ', 'خَلْفَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْقَلَمُ ...... الْكُرْسِيِّ', options: ['تَحْتَ', 'فَوْقَ', 'أَمَامَ', 'بَيْنَ'], correct: 0 },
+            { category: 'zharful', question: 'Lengkapilah dengan kata tempat yang tepat:', arabic: 'الْمَكْتَبُ ...... الأُسْتَاذِ', options: ['أَمَامَ', 'فَوْقَ', 'تَحْتَ', 'خَلْفَ'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti dari kata berikut?', arabic: 'فَوْقَ', options: ['Di atas', 'Di bawah', 'Di depan', 'Di belakang'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti dari kata berikut?', arabic: 'تَحْتَ', options: ['Di bawah', 'Di atas', 'Di depan', 'Di dalam'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti dari kata berikut?', arabic: 'أَمَامَ', options: ['Di depan', 'Di belakang', 'Di antara', 'Di bawah'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti dari kata berikut?', arabic: 'خَلْفَ', options: ['Di belakang', 'Di depan', 'Di atas', 'Di dalam'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti dari kata berikut?', arabic: 'بَيْنَ', options: ['Di antara', 'Di atas', 'Di bawah', 'Di depan'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti dari kata berikut?', arabic: 'فِي', options: ['Di dalam', 'Di atas', 'Di bawah', 'Di belakang'], correct: 0 },
+            { category: 'zharful', question: 'Apa arti kosakata berikut?', arabic: 'السَّبُّورَةُ', options: ['Papan Tulis', 'Meja', 'Buku', 'Jam'], correct: 0 },
+            { category: 'zharful', question: 'Apa lawan kata dari تَحْتَ (Di bawah)?', arabic: 'تَحْتَ ↔ .....', options: ['فَوْقَ', 'أَمَامَ', 'خَلْفَ', 'فِي'], correct: 0 },
 
-            // BILANGAN - 25 soal
+            // BILANGAN (25 soal - Soal cerita disesuaikan dengan 9 kosakata)
             { category: 'bilangan', question: 'Hitunglah:', arabic: 'أَرْبَعَةٌ + خَمْسَةٌ = ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'ثَمَانِيَةٌ', 'عَشَرَةٌ'], correct: 1 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: 'ثَلَاثَةٌ + سَبْعَةٌ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'عَشَرَةٌ', 'تِسْعَةٌ'], correct: 2 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: 'سِتَّةٌ + أَرْبَعَةٌ = ؟', options: ['سَبْعَةٌ', 'عَشَرَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'], correct: 1 },
@@ -665,30 +724,40 @@
             { category: 'bilangan', question: 'Hitunglah:', arabic: '٢ + ٣ = ؟', options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'], correct: 1 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: '٧ - ٢ = ؟', options: ['ثَلَاثَةٌ', 'أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ'], correct: 2 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: '٨ + ٧ = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'خَمْسَةَ عَشَرَ'], correct: 3 },
-            { category: 'bilangan', question: 'Hitunglah:', arabic: '١٠ - ٥ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'], correct: 3 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '١٠ - ٥ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'خَمْسَةٌ'], correct: 3 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: '٦ + ٦ = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'ثَلَاثَةَ عَشَرَ'], correct: 2 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: 'اِثْنَانِ × ثَلَاثَةٌ = ؟', options: ['أَرْبَعَةٌ', 'خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ'], correct: 2 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: 'أَرْبَعَةٌ × اِثْنَانِ = ؟', options: ['سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ'], correct: 2 },
-            { category: 'bilangan', question: 'Hitunglah:', arabic: '٥ +  + ٥ = ؟', options: ['عَشَرَةٌ', 'خَمْسَةَ عَشَرَ', 'عِشْرُونَ', 'تِسْعَةٌ'], correct: 1 },
+            { category: 'bilangan', question: 'Hitunglah:', arabic: '٥ + ٥ + ٥ = ؟', options: ['عَشَرَةٌ', 'خَمْسَةَ عَشَرَ', 'عِشْرُونَ', 'تِسْعَةٌ'], correct: 1 },
             { category: 'bilangan', question: 'Hitunglah:', arabic: 'أَرْبَعَةٌ + سَبْعَةٌ = ؟', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'], correct: 2 },
             { category: 'bilangan', question: 'Lengkapilah pola:', arabic: '٢ ، ٤ ، ٦ ، ٨ ، ...', options: ['تِسْعَةٌ', 'عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ'], correct: 1 },
             { category: 'bilangan', question: 'Lengkapilah pola:', arabic: '١ ، ٣ ، ٥ ، ٧ ، ...', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'عَشَرَةٌ'], correct: 2 },
             { category: 'bilangan', question: 'Mana yang LEBIH BESAR?', arabic: 'تِسْعَةٌ أمْ سَبْعَةٌ؟', options: ['سَبْعَةٌ', 'تِسْعَةٌ', 'Sama', 'Tidak tahu'], correct: 1 },
             { category: 'bilangan', question: 'Mana yang LEBIH KECIL?', arabic: 'عَشَرَةٌ أمْ خَمْسَةٌ؟', options: ['عَشَرَةٌ', 'خَمْسَةٌ', 'Sama', 'Tidak tahu'], correct: 1 },
-            { category: 'bilangan', question: 'Ahmad punya 3 buku, dapat 4 lagi. Berapa total?', arabic: '٣ + ٤ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
-            { category: 'bilangan', question: 'Ada 10 siswa, 3 pergi. Berapa sisa?', arabic: '١٠ - ٣ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'سِتَّةٌ'], correct: 0 },
-            { category: 'bilangan', question: 'Fatimah punya 5 pensil, dapat 6 lagi. Berapa total?', arabic: '٥ + ٦ = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'تِسْعَةٌ'], correct: 1 }
+            { category: 'bilangan', question: 'Ada 3 Buku (كِتَاب), lalu ditambah 4 Buku (كِتَاب) lagi. Total?', arabic: '٣ + ٤ = ؟', options: ['خَمْسَةٌ', 'سِتَّةٌ', 'سَبْعَةٌ', 'ثَمَانِيَةٌ'], correct: 2 },
+            { category: 'bilangan', question: 'Ada 10 Siswa (تِلْمِيْذ) di Kelas (فَصْل), 3 pergi. Berapa sisa?', arabic: '١٠ - ٣ = ؟', options: ['سَبْعَةٌ', 'ثَمَانِيَةٌ', 'تِسْعَةٌ', 'سِتَّةٌ'], correct: 0 },
+            { category: 'bilangan', question: 'Ada 5 Pena (قَلَم), lalu ditambah 6 Pena (قَلَم) lagi. Total?', arabic: '٥ + ٦ = ؟', options: ['عَشَرَةٌ', 'أَحَدَ عَشَرَ', 'اِثْنَا عَشَرَ', 'تِسْعَةٌ'], correct: 1 }
         ];
 
-        // State
+        // State Global & Sesi
         let currentPlayer = '';
         let currentQuestion = null;
         let currentCardIndex = -1;
         let timerInterval = null;
         let timerStart = 0;
-        let usedCards = new Set();
-        let cardResults = {};
         let leaderboard = [];
+
+        // State Kartu yang sudah dipakai oleh siswa aktif pada sesi device ini
+        let usedCardsInSession = new Set();
+
+        // State Sesi Siswa Saat Ini (Siswa mengerjakan 10 kartu)
+        let studentSession = {
+            cardsAnswered: 0,
+            totalScore: 0,
+            totalTime: 0,
+            correctCount: 0,
+            details: []
+        };
 
         // Init
         document.addEventListener('DOMContentLoaded', () => {
@@ -700,7 +769,7 @@
 
         // API Functions
         async function apiGet(action) {
-            if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') return null;
+            if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI' || !APPS_SCRIPT_URL) return null;
             
             try {
                 const response = await fetch(`${APPS_SCRIPT_URL}?action=${action}`, {
@@ -710,7 +779,6 @@
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 
                 const data = await response.json();
-                console.log('API GET success:', data);
                 return data;
             } catch (error) {
                 console.error('API GET error:', error);
@@ -719,11 +787,9 @@
         }
 
         async function apiPost(data) {
-            if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI') return null;
+            if (APPS_SCRIPT_URL === 'URL_APPS_SCRIPT_ANDA_DISINI' || !APPS_SCRIPT_URL) return null;
             
             try {
-                console.log('API POST data:', data);
-                
                 const response = await fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -732,8 +798,6 @@
                     },
                     body: JSON.stringify(data)
                 });
-                
-                console.log('API POST response status:', response.status);
                 return { success: true };
             } catch (error) {
                 console.error('API POST error:', error);
@@ -743,16 +807,13 @@
 
         // Load Data
         async function loadData() {
-            showLoading('Memuat data...');
+            showLoading('Memuat data dari Spreadsheet...');
             
             const data = await apiGet('getAllData');
             
             if (data && data.success) {
                 updateStatus(true);
                 leaderboard = data.leaderboard || [];
-                usedCards = new Set(data.usedCards || []);
-                cardResults = data.cardResults || {};
-                
                 renderLeaderboard();
                 updateCardsInfo();
                 showToast('Data berhasil dimuat!', 'success');
@@ -783,7 +844,7 @@
                 return;
             }
             
-            // Sort by score
+            // Urutkan berdasarkan skor tertinggi & waktu tercepat
             leaderboard.sort((a, b) => {
                 if (b.score !== a.score) return b.score - a.score;
                 return a.time - b.time;
@@ -792,14 +853,16 @@
             list.innerHTML = leaderboard.map((item, index) => {
                 const rank = index + 1;
                 const rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : 'rank-other';
-                const rankSymbol = rank === 1 ? '🥇' : rank === 2 ? '' : rank === 3 ? '' : rank;
+                const rankSymbol = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
                 
+                const totalTarget = item.cardsCount || TOTAL_CARDS_PER_STUDENT;
+
                 return `
                     <li>
                         <div class="rank ${rankClass}">${rankSymbol}</div>
                         <div class="player-info">
                             <div class="player-name">${item.name}</div>
-                            <div class="player-stats">⏱ ${item.time.toFixed(1)}s | ✅ ${item.correct ? 'Benar' : 'Salah'}</div>
+                            <div class="player-stats">⏱ ${item.time.toFixed(1)}s | ✅ ${item.correctCount !== undefined ? item.correctCount : 0}/${totalTarget} Benar</div>
                         </div>
                         <div class="player-score">${item.score}</div>
                     </li>
@@ -808,9 +871,8 @@
         }
 
         function updateCardsInfo() {
-            const remaining = 50 - usedCards.size;
             document.getElementById('cardsInfo').textContent = 
-                `📊 Kartu tersisa: ${remaining} dari 50 | Sudah dipakai: ${usedCards.size}`;
+                `🎯 Total 50 Kartu tersedia secara bebas. Setiap siswa wajib mengerjakan ${TOTAL_CARDS_PER_STUDENT} kartu.`;
         }
 
         // Start Game
@@ -822,20 +884,33 @@
                 return;
             }
             
-            if (usedCards.size >= 50) {
-                showToast('Semua kartu sudah dipakai!', 'error');
-                return;
-            }
-            
             currentPlayer = name;
+            usedCardsInSession.clear(); // Kartu di-reset per siswa/sesi device baru
+
+            // Reset Sesi Siswa Aktif
+            studentSession = {
+                cardsAnswered: 0,
+                totalScore: 0,
+                totalTime: 0,
+                correctCount: 0,
+                details: []
+            };
+
             document.getElementById('currentPlayer').textContent = name;
+            updateProgressBadge();
+
             document.getElementById('nameScreen').classList.remove('active');
             document.getElementById('cardScreen').classList.add('active');
             
             renderCards();
         }
 
-        // Render Cards
+        function updateProgressBadge() {
+            const badge = document.getElementById('playerProgressBadge');
+            badge.textContent = `Kartu Ke-${studentSession.cardsAnswered + 1} dari ${TOTAL_CARDS_PER_STUDENT}`;
+        }
+
+        // Render Cards (Setiap device memiliki akses penuh 50 kartu)
         function renderCards() {
             const grid = document.getElementById('cardsGrid');
             grid.innerHTML = '';
@@ -844,12 +919,11 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 
-                if (usedCards.has(i)) {
+                if (usedCardsInSession.has(i)) {
                     card.classList.add('used');
-                    const result = cardResults[i];
                     card.innerHTML = `
                         <div class="card-number">${i + 1}</div>
-                        <div class="card-status">${result ? result.name : '?'}</div>
+                        <div class="card-status">Selesai</div>
                     `;
                 } else {
                     card.onclick = () => selectCard(i);
@@ -865,8 +939,8 @@
 
         // Select Card
         function selectCard(index) {
-            if (usedCards.has(index)) {
-                showToast('Kartu ini sudah dipakai!', 'error');
+            if (usedCardsInSession.has(index)) {
+                showToast('Kamu sudah menjawab kartu ini di sesi ini!', 'error');
                 return;
             }
             
@@ -920,52 +994,89 @@
                 }
             });
             
-            // Calculate score
+            // Calculate score per card
             const score = isCorrect ? Math.round(100 + (30 - time) * 2) : 0;
             
-            // Show result
+            // Update Student Active Session
+            studentSession.cardsAnswered += 1;
+            studentSession.totalScore += score;
+            studentSession.totalTime += time;
+            if (isCorrect) studentSession.correctCount += 1;
+            
+            studentSession.details.push({
+                cardIndex: currentCardIndex,
+                question: currentQuestion.arabic,
+                correct: isCorrect,
+                score: score,
+                time: time
+            });
+
+            // Tandai kartu ini sudah dipakai dalam sesi siswa ini
+            usedCardsInSession.add(currentCardIndex);
+            
+            // Show result modal text
             const resultDiv = document.getElementById('result');
             resultDiv.className = `result show ${isCorrect ? 'correct' : 'wrong'}`;
             document.getElementById('resultEmoji').textContent = isCorrect ? '🎉' : '😔';
-            document.getElementById('resultText').textContent = isCorrect ? 'Benar! Hebat!' : 'Kurang tepat!';
-            document.getElementById('resultScore').textContent = 
-                `Skor: ${score} | Waktu: ${time.toFixed(1)}s`;
+            document.getElementById('resultText').textContent = isCorrect ? 'Jawaban Benar!' : 'Kurang tepat!';
             
-            // Save data
-            usedCards.add(currentCardIndex);
-            cardResults[currentCardIndex] = {
-                name: currentPlayer,
-                correct: isCorrect,
-                score: score,
-                time: time
-            };
-            
-            leaderboard.push({
-                name: currentPlayer,
-                score: score,
-                correct: isCorrect,
-                time: time
-            });
-            
-            // Save to spreadsheet
-            apiPost({
-                action: 'saveResult',
-                cardIndex: currentCardIndex,
-                name: currentPlayer,
-                correct: isCorrect,
-                score: score,
-                time: time,
-                question: currentQuestion.arabic
-            });
-            
-            renderLeaderboard();
-            updateCardsInfo();
-            
-            // Auto close after 3 seconds
+            if (studentSession.cardsAnswered < TOTAL_CARDS_PER_STUDENT) {
+                document.getElementById('resultScore').textContent = 
+                    `Skor Kartu Ini: ${score} | Lanjut Kartu Ke-${studentSession.cardsAnswered + 1}...`;
+            } else {
+                document.getElementById('resultScore').textContent = 
+                    `Total Skor (10 Kartu): ${studentSession.totalScore} | Mengirim data...`;
+            }
+
+            // Auto transition after 2.5 seconds
             setTimeout(() => {
                 closeModal();
-                resetToNameScreen();
-            }, 3000);
+                
+                if (studentSession.cardsAnswered < TOTAL_CARDS_PER_STUDENT) {
+                    // Masih ada jatah kartu
+                    updateProgressBadge();
+                    renderCards();
+                    showToast(`Hebat! Pilih Kartu Ke-${studentSession.cardsAnswered + 1} untuk ${currentPlayer}`, 'info');
+                } else {
+                    // Sudah mengerjakan 10 kartu -> Kirim data ke Spreadsheet!
+                    finishStudentTurn();
+                }
+            }, 2500);
+        }
+
+        // Selesai 10 Kartu -> Kirim Ke Spreadsheet & Update Papan Peringkat
+        async function finishStudentTurn() {
+            showLoading('Mengirim data nilai akhir ke Spreadsheet...');
+
+            const finalData = {
+                action: 'saveResult',
+                name: currentPlayer,
+                score: studentSession.totalScore,
+                time: studentSession.totalTime,
+                correctCount: studentSession.correctCount,
+                cardsCount: studentSession.cardsAnswered,
+                details: studentSession.details
+            };
+
+            // Tambahkan ke Papan Peringkat Lokal
+            leaderboard.push({
+                name: currentPlayer,
+                score: studentSession.totalScore,
+                correctCount: studentSession.correctCount,
+                cardsCount: studentSession.cardsAnswered,
+                time: studentSession.totalTime
+            });
+
+            // Kirim ke Apps Script / Spreadsheet
+            await apiPost(finalData);
+
+            hideLoading();
+            renderLeaderboard();
+            updateCardsInfo();
+            showToast(`Selamat ${currentPlayer}! Kamu telah menyelesaikan 10 kartu!`, 'success');
+
+            // Reset ke tampilan input nama untuk siswa berikutnya
+            resetToNameScreen();
         }
 
         // Close Modal
@@ -977,12 +1088,9 @@
         // Reset to Name Screen
         function resetToNameScreen() {
             document.getElementById('studentName').value = '';
+            usedCardsInSession.clear();
             document.getElementById('cardScreen').classList.remove('active');
             document.getElementById('nameScreen').classList.add('active');
-            
-            if (usedCards.size >= 50) {
-                showToast('Semua kartu sudah selesai! Refresh untuk reset.', 'info');
-            }
         }
 
         // UI Helpers
@@ -1002,7 +1110,7 @@
             
             setTimeout(() => {
                 toast.classList.remove('show');
-            }, 3000);
+            }, 3500);
         }
     </script>
 </body>
